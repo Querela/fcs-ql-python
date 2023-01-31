@@ -70,3 +70,33 @@ jobs:
       with:
         name: Coverage
         path: htmlcov
+
+
+  docs:
+
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.8'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        python -m pip install -e .[docs]
+
+    - name: Build documentation
+      run: |
+        sphinx-build -b html docs dist/docs
+        sphinx-build -b linkcheck docs dist/docs
+
+    - name: Upload documentation
+      uses: actions/upload-artifact@v3
+      with:
+        name: Docs
+        path: dist/docs
