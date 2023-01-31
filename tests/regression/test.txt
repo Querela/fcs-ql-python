@@ -1,0 +1,4 @@
+[attr='flagged regexp'/l & attr!='unflagged regexp']
+"a" | 'b'
+'"a" or \'b\''
+('a sequence + '{1,5} 'optional\n\\'?)

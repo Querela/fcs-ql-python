@@ -1,0 +1,1 @@
+[z:pos = "ADJ" | q:pos = "ADJ"]
