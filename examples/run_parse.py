@@ -1,11 +1,12 @@
-from antlr4 import CommonTokenStream
-from antlr4 import InputStream
-from antlr4 import ParserRuleContext
+# from antlr4 import CommonTokenStream
+# from antlr4 import InputStream
+# from antlr4 import ParserRuleContext
+# from fcsql.FCSLexer import FCSLexer
+
 from antlr4 import ParseTreeWalker
 
 from fcsql import antlr_parse
 from fcsql import parse
-from fcsql.FCSLexer import FCSLexer
 from fcsql.FCSParser import FCSParser
 from fcsql.FCSParserListener import FCSParserListener
 

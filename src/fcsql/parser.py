@@ -145,6 +145,9 @@ class QueryVisitor(metaclass=ABCMeta):
 
         Args:
             node: the node to visit
+
+        Returns:
+            ``None``
         """
         if not node:
             return None
@@ -200,6 +203,9 @@ class QueryNode(metaclass=ABCMeta):
 
         Returns:
             bool: ``True`` if node is of given type, ``False`` otherwise
+
+        Raises:
+            TypeError: if node_type is ``None``
         """
         if node_type is None:
             raise TypeError("node_type is None")
@@ -223,6 +229,7 @@ class QueryNode(metaclass=ABCMeta):
         the requested type are counted.
 
         Args:
+            idx: the index of the child node (if `clazz` provided, only consideres child nodes of requested type)
             clazz: the type to nodes to be considered, optional
 
         Returns:
@@ -323,6 +330,9 @@ class Expression(QueryNode):
 
         Returns:
             bool: ``True`` if this identifier was used, ``False`` otherwise
+
+        Raises:
+            TypeError: if identifier is ``None``
         """
         if identifier is None:
             raise TypeError("identifier is None")
@@ -346,6 +356,9 @@ class Expression(QueryNode):
 
         Returns:
             bool: ``True`` if this identifier was used, ``False`` otherwise
+
+        Raises:
+            TypeError: if qualifier is ``None``
         """
         if qualifier is None:
             raise TypeError("qualifier is None")
@@ -361,6 +374,9 @@ class Expression(QueryNode):
 
         Returns:
             bool: ``True`` if the given operator was used, ``False`` otherwise
+
+        Raises:
+            TypeError: if operator is ``None``
         """
         if operator is None:
             raise TypeError("operator is None")
@@ -382,6 +398,9 @@ class Expression(QueryNode):
 
         Returns:
             bool: ``True`` if the flag is set, ``False`` otherwise
+
+        Raises:
+            TypeError: if flag is ``None``
         """
         if flag is None:
             raise TypeError("flag is None")
@@ -1429,7 +1448,7 @@ class QueryParser:
             default_identifier: the default identifier to be used for simple expressions. Defaults to `DEFAULT_IDENTIFIER`.
             default_operator: the default operator. Defaults to `DEFAULT_OPERATOR`.
             unicode_normalization_form: the Unicode normalization form to be used or ``None`` to not perform normlization. Defaults to `DEFAULT_UNICODE_NORMALIZATION_FORM`.
-        """
+        """  # noqa: E501
         self.default_identifier = default_identifier
         self.default_operator = default_operator
         self.unicode_normalization_form = unicode_normalization_form

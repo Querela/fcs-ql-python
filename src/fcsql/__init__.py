@@ -43,10 +43,10 @@ def parse(input: str) -> QueryNode:
         input: raw input query string
 
     Returns:
-        `QueryNode`: parsed query
+        QueryNode: parsed query
 
     Throws:
-        `QueryParserException`: if an error occurred
+        QueryParserException: if an error occurred
     """
     parser = QueryParser()
     return parser.parse(input)
