@@ -30,7 +30,7 @@ from fcsql.FCSParserListener import FCSParserListener
 LOGGER = logging.getLogger(__name__)
 
 
-T = TypeVar("T", bound="QueryNode")
+_T = TypeVar("_T", bound="QueryNode")
 
 
 OCCURS_UNBOUNDED = -1
@@ -221,7 +221,7 @@ class QueryNode(metaclass=ABCMeta):
         return len(self.children) if self.children else 0
 
     def get_child(
-        self, idx: int, clazz: Optional[Type[T]] = None
+        self, idx: int, clazz: Optional[Type[_T]] = None
     ) -> Optional["QueryNode"]:
         """Get a child node of specified type by index.
 
@@ -247,7 +247,9 @@ class QueryNode(metaclass=ABCMeta):
                 pos += 1
         return None
 
-    def get_first_child(self, clazz: Optional[Type[T]] = None) -> Optional["QueryNode"]:
+    def get_first_child(
+        self, clazz: Optional[Type[_T]] = None
+    ) -> Optional["QueryNode"]:
         """Get this first child node.
 
         Args:
@@ -256,9 +258,9 @@ class QueryNode(metaclass=ABCMeta):
         Returns:
             QueryNode: the first child node of this node or ``None``
         """
-        return self.get_child(0)
+        return self.get_child(0, clazz=clazz)
 
-    def get_last_child(self, clazz: Optional[Type[T]] = None) -> Optional["QueryNode"]:
+    def get_last_child(self, clazz: Optional[Type[_T]] = None) -> Optional["QueryNode"]:
         """Get this last child node.
 
         Args:
@@ -267,7 +269,7 @@ class QueryNode(metaclass=ABCMeta):
         Returns:
             QueryNode: the last child node of this node or ``None``
         """
-        return self.get_child(self.child_count - 1)
+        return self.get_child(self.child_count - 1, clazz=clazz)
 
     def __str__(self) -> str:
         chs = " ".join(map(str, self.children))
