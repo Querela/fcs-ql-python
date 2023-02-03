@@ -55,7 +55,6 @@ def get_test_queries():
 
 @pytest.mark.parametrize("name,query", get_test_queries())
 def test_parser_by_sample_query(parser: QueryParser, name: str, query: str):
-
     if name == "test12.txt":
         with pytest.raises(
             QueryParserException, match="token recognition error at: '-'"
@@ -63,7 +62,6 @@ def test_parser_by_sample_query(parser: QueryParser, name: str, query: str):
             parser.parse(query)
 
     else:
-
         node = parser.parse(query)
         assert node is not None
         assert isinstance(node, QueryNode)
