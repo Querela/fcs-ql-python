@@ -47,31 +47,31 @@ class QueryNodeType(str, Enum):
         return self.value
 
     QUERY_SEGMENT = "QuerySegment"
-    """segment query"""
+    """Segment query."""
     QUERY_GROUP = "QueryGroup"
-    """group query"""
+    """Group query."""
     QUERY_SEQUENCE = "QuerySequence"
-    """sequence query"""
+    """Sequence query."""
     QUERY_DISJUNCTION = "QueryDisjunction"
-    """or query"""
+    """Or query."""
     QUERY_WITH_WITHIN = "QueryWithWithin"
-    """query with within part"""
+    """Query with within part."""
 
     EXPRESSION = "Expression"
-    """simple expression"""
+    """Simple expression."""
     EXPRESSION_WILDCARD = "Wildcard"
-    """wildcard expression"""
+    """Wildcard expression."""
     EXPRESSION_GROUP = "Group"
-    """group expression"""
+    """Group expression."""
     EXPRESSION_OR = "Or"
-    """or expression"""
+    """Or expression."""
     EXPRESSION_AND = "And"
-    """and expression"""
+    """And expression."""
     EXPRESSION_NOT = "Not"
-    """not expression"""
+    """Not expression."""
 
     SIMPLE_WITHIN = "SimpleWithin"
-    """simple within part"""
+    """Simple within part."""
 
 
 class Operator(str, Enum):
@@ -101,13 +101,13 @@ class RegexFlag(str, Enum):
         return self.value
 
     CASE_INSENSITIVE = ("case-insensitive", "i")
-    """case insensitive"""
+    """Case insensitive."""
     CASE_SENSITIVE = ("case-sensitive", "I")
-    """case sensitive"""
+    """Case sensitive."""
     LITERAL_MATCHING = ("literal-matching", "l")
     """match exactly (= literally)"""
     IGNORE_DIACRITICS = ("ignore-diacritics", "d")
-    """ignore all diacritics"""
+    """Ignore all diacritics."""
 
 
 class SimpleWithinScope(str, Enum):
@@ -134,12 +134,14 @@ class SimpleWithinScope(str, Enum):
 
 
 class QueryVisitor(metaclass=ABCMeta):
-    """Interface implementing a Visitor pattern for FCS-QL expression
-    trees. Default method implementations do nothing."""
+    """Interface implementing a Visitor pattern for FCS-QL expression trees.
+
+    Default method implementations do nothing.
+    """
 
     def visit(self, node: "QueryNode") -> None:
-        """Visit a query node. Generic handler, dispatches to visit
-        methods based on `QueryNodeType` if exists else do nothing::
+        """Visit a query node. Generic handler, dispatches to visit methods
+        based on `QueryNodeType` if exists else do nothing::
 
             method = "visit_" + node.node_type.value
 
@@ -184,7 +186,10 @@ class QueryNode(metaclass=ABCMeta):
         """The node type of this node."""
 
         self.parent: Optional[QueryNode] = None
-        """The parent node of this node. ``None`` if this is the root node."""
+        """The parent node of this node.
+
+        ``None`` if this is the root node.
+        """
 
         if not children:
             children = list()
@@ -314,7 +319,10 @@ class Expression(QueryNode):
             regex_flags = set(regex_flags)
 
         self.qualifier = qualifier
-        """The Layer Type Identifier qualifier. ``None`` if not used in this expression."""
+        """The Layer Type Identifier qualifier.
+
+        ``None`` if not used in this expression.
+        """
         self.identifier = identifier
         """The layer identifier."""
         self.operator = operator
@@ -322,7 +330,10 @@ class Expression(QueryNode):
         self.regex = regex
         """The regex value."""
         self.regex_flags = regex_flags
-        """The regex flags set. ``None`` if no flags were used in this expression."""
+        """The regex flags set.
+
+        ``None`` if no flags were used in this expression.
+        """
 
     def has_layer_identifier(self, identifier: str) -> bool:
         """Check if the expression used a given **Layer Type Identifier**.
@@ -350,8 +361,8 @@ class Expression(QueryNode):
         return bool(self.qualifier)
 
     def has_layer_qualifier(self, qualifier: str) -> bool:
-        """Check if the expression used a given qualifier for the
-        Layer Type Identifier.
+        """Check if the expression used a given qualifier for the Layer Type
+        Identifier.
 
         Args:
             qualifier: the qualifier to check against
@@ -508,7 +519,7 @@ class ExpressionAnd(QueryNode):
 
     @property
     def operands(self) -> List[QueryNode]:
-        """Get the AND expression operands
+        """Get the AND expression operands.
 
         Returns:
             List[QueryNode]: a list of expressions
@@ -535,7 +546,7 @@ class ExpressionOr(QueryNode):
 
     @property
     def operands(self) -> List[QueryNode]:
-        """Get the OR expression operands
+        """Get the OR expression operands.
 
         Returns:
             List[QueryNode]: a list of expressions
@@ -553,7 +564,7 @@ class ExpressionOr(QueryNode):
 
 
 class QueryDisjunction(QueryNode):
-    """A FCS-QL expression tree QR query"""
+    """A FCS-QL expression tree QR query."""
 
     def __init__(self, children: List[QueryNode]):
         """[Constructor]
@@ -717,7 +728,7 @@ class SimpleWithin(QueryNode):
         super().__init__(QueryNodeType.SIMPLE_WITHIN)
 
         self.scope = scope
-        """The simple within scope"""
+        """The simple within scope."""
 
     def __str__(self) -> str:
         return f"({self.node_type!s} {self.scope!s})"
@@ -738,7 +749,11 @@ EMPTY_STRING = ""
 DEFAULT_IDENTIFIER = "text"
 DEFAULT_OPERATOR = Operator.EQUALS
 DEFAULT_UNICODE_NORMALIZATION_FORM = "NFC"
-"""see: https://docs.python.org/3/library/unicodedata.html#unicodedata.normalize"""
+"""Default unicode normalization form.
+
+See also: `unicodedata.normalize
+<https://docs.python.org/3/library/unicodedata.html#unicodedata.normalize>`_
+"""
 
 
 # ---------------------------------------------------------------------------

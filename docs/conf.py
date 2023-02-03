@@ -6,6 +6,7 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.extlinks",
     "sphinx.ext.ifconfig",
+    "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
@@ -45,3 +46,7 @@ napoleon_google_docstring = True
 napoleon_use_ivar = True
 napoleon_use_rtype = False
 napoleon_use_param = False
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+}
