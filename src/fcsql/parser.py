@@ -825,7 +825,7 @@ class ExpressionTreeBuilder(FCSParserListener):
             self.stack.append(QueryWithWithin(query, within))
 
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitQuery: stack={}", self.stack)
+            LOGGER.debug("exitQuery: stack=%s", self.stack)
 
         return super().exitQuery(ctx)
 
@@ -841,7 +841,7 @@ class ExpressionTreeBuilder(FCSParserListener):
 
     def exitMain_query(self, ctx: FCSParser.Main_queryContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitMain_query: stack={}", self.stack)
+            LOGGER.debug("exitMain_query: stack=%s", self.stack)
         return super().exitMain_query(ctx)
 
     def enterQuery_disjunction(self, ctx: FCSParser.Query_disjunctionContext):
@@ -866,7 +866,7 @@ class ExpressionTreeBuilder(FCSParserListener):
             raise ExpressionTreeBuilderException("exitQuery_disjunction is empty")
 
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitQuery_disjunction: stack={}", self.stack)
+            LOGGER.debug("exitQuery_disjunction: stack=%s", self.stack)
         return super().exitQuery_disjunction(ctx)
 
     def enterQuery_sequence(self, ctx: FCSParser.Query_sequenceContext):
@@ -891,7 +891,7 @@ class ExpressionTreeBuilder(FCSParserListener):
             raise ExpressionTreeBuilderException("exitQuery_sequence is empty")
 
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitQuery_sequence: stack={}", self.stack)
+            LOGGER.debug("exitQuery_sequence: stack=%s", self.stack)
         return super().exitQuery_sequence(ctx)
 
     def enterQuery_group(self, ctx: FCSParser.Query_groupContext):
@@ -917,7 +917,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         self.stack.append(QueryGroup(content, min, max))
 
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitQuery_group: stack={}", self.stack)
+            LOGGER.debug("exitQuery_group: stack=%s", self.stack)
         return super().exitQuery_group(ctx)
 
     def enterQuery_simple(self, ctx: FCSParser.Query_simpleContext):
@@ -943,7 +943,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         self.stack.append(QuerySegment(expression, min, max))
 
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitQuery_simple: stack={}", self.stack)
+            LOGGER.debug("exitQuery_simple: stack=%s", self.stack)
         return super().exitQuery_simple(ctx)
 
     def enterQuery_implicit(self, ctx: FCSParser.Query_implicitContext):
@@ -977,7 +977,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         )
 
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitQuery_implicit: stack={}", self.stack)
+            LOGGER.debug("exitQuery_implicit: stack=%s", self.stack)
         return super().exitQuery_implicit(ctx)
 
     # TODO: check, abortable, if also exit?
@@ -1001,7 +1001,7 @@ class ExpressionTreeBuilder(FCSParserListener):
 
     def exitQuery_segment(self, ctx: FCSParser.Query_segmentContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitQuery_segment: stack={}", self.stack)
+            LOGGER.debug("exitQuery_segment: stack=%s", self.stack)
         return super().exitQuery_segment(ctx)
 
     def enterExpression_basic(self, ctx: FCSParser.Expression_basicContext):
@@ -1043,7 +1043,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         )
 
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitExpression_basic: stack={}", self.stack)
+            LOGGER.debug("exitExpression_basic: stack=%s", self.stack)
         return super().exitExpression_basic(ctx)
 
     def enterExpression_not(self, ctx: FCSParser.Expression_notContext):
@@ -1061,7 +1061,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         self.stack.append(ExpressionNot(expression))
 
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitExpression_not: stack={}", self.stack)
+            LOGGER.debug("exitExpression_not: stack=%s", self.stack)
         return super().exitExpression_not(ctx)
 
     def enterExpression_group(self, ctx: FCSParser.Expression_groupContext):
@@ -1079,7 +1079,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         self.stack.append(ExpressionGroup(expression))
 
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitExpression_group: stack={}", self.stack)
+            LOGGER.debug("exitExpression_group: stack=%s", self.stack)
         return super().exitExpression_group(ctx)
 
     def enterExpression_or(self, ctx: FCSParser.Expression_orContext):
@@ -1104,7 +1104,7 @@ class ExpressionTreeBuilder(FCSParserListener):
             raise ExpressionTreeBuilderException("exitExpression_or is empty")
 
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitExpression_or: stack={}", self.stack)
+            LOGGER.debug("exitExpression_or: stack=%s", self.stack)
         return super().exitExpression_or(ctx)
 
     def enterExpression_and(self, ctx: FCSParser.Expression_andContext):
@@ -1129,7 +1129,7 @@ class ExpressionTreeBuilder(FCSParserListener):
             raise ExpressionTreeBuilderException("exitExpression_and is empty")
 
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitExpression_and: stack={}", self.stack)
+            LOGGER.debug("exitExpression_and: stack=%s", self.stack)
         return super().exitExpression_and(ctx)
 
     # TODO: check, or exit
@@ -1153,7 +1153,7 @@ class ExpressionTreeBuilder(FCSParserListener):
 
     def exitAttribute(self, ctx: FCSParser.AttributeContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitAttribute: stack={}", self.stack)
+            LOGGER.debug("exitAttribute: stack=%s", self.stack)
         return super().exitAttribute(ctx)
 
     # TODO: check, or exit
@@ -1232,7 +1232,7 @@ class ExpressionTreeBuilder(FCSParserListener):
 
     def exitRegexp(self, ctx: FCSParser.RegexpContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitRegexp: stack={}", self.stack)
+            LOGGER.debug("exitRegexp: stack=%s", self.stack)
         return super().exitRegexp(ctx)
 
     # TODO: check, abortable, if also exit?
@@ -1270,7 +1270,7 @@ class ExpressionTreeBuilder(FCSParserListener):
 
     def exitWithin_part_simple(self, ctx: FCSParser.Within_part_simpleContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitWithin_part_simple: stack={}", self.stack)
+            LOGGER.debug("exitWithin_part_simple: stack=%s", self.stack)
         return super().exitWithin_part_simple(ctx)
 
     # ----------------------------------------------------
