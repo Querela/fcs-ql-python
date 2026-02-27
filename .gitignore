@@ -1,0 +1,21 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Coverage etc.
+htmlcov/
+js/
+.coverage
+
+# Virtual environments
+.venv
+
+# ANTLR4
+.antlr/
+
+# scratch
+.scratch/

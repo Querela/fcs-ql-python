@@ -35,9 +35,7 @@ def get_files():
 def get_test_queries():
     files = get_files()
     queries = map(load_content, files)
-    return chain.from_iterable(
-        [zip(repeat(name), queries) for name, queries in zip(files, queries)]
-    )
+    return chain.from_iterable([zip(repeat(name), queries) for name, queries in zip(files, queries)])
 
 
 # ---------------------------------------------------------------------------
@@ -56,9 +54,7 @@ def get_test_queries():
 @pytest.mark.parametrize("name,query", get_test_queries())
 def test_parser_by_sample_query(parser: QueryParser, name: str, query: str):
     if name == "test12.txt":
-        with pytest.raises(
-            QueryParserException, match="token recognition error at: '-'"
-        ):
+        with pytest.raises(QueryParserException, match="token recognition error at: '-'"):
             parser.parse(query)
 
     else:

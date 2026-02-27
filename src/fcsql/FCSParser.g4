@@ -41,7 +41,7 @@ query_simple
 
 quantifier
     : (Q_ONE_OR_MORE | Q_ZERO_OR_MORE | Q_ZERO_OR_ONE |
-        ( L_CURLY_BRACKET
+        (L_CURLY_BRACKET
             (INTEGER |
              INTEGER? Q_COMMA INTEGER |
              INTEGER Q_COMMA INTEGER?) R_CURLY_BRACKET))
@@ -68,35 +68,40 @@ within_part_simple
     ;
 
 
+// !/NOT will bind the strongest (more intuitive)
+// !a="b" | c="d"  <==> (!a="b") | c="d"
 expression
     : expression_basic
-    | expression_not
     | expression_group
     | expression_or
     | expression_and
+    | expression_not
     ;
 
 
 expression_or
-    : (expression_basic | expression_group | expression_not | expression_and) 
-        (OR (expression_basic | expression_group | expression_not | expression_and))+ 
-    ;    
+    : (expression_basic | expression_group | expression_and | expression_not) 
+        (OR (expression_basic | expression_group | expression_and | expression_not))+
+    ;
 
 
+// expression_and does not allow expression_or in first part due to left-recursion
+// this will currently bind &/AND tighter together than |/OR expressions
+// a="b" | c="d" & e="f"  <==>  a="b" | (c="d" & e="f")
+// a="b" & c="d" | e="f"  <==>  (a="b" & c="d") | e="f"
 expression_and
     : (expression_basic | expression_group | expression_not)
-        (AND (expression_basic | expression_group | expression_not))+ 
-    ;    
-
+        (AND (expression_basic | expression_group | expression_or | expression_not))+
+    ;
 
 
 expression_group
-    : L_PAREN (expression_basic | expression_not | expression_or | expression_and) R_PAREN
+    : L_PAREN (expression_basic | expression_group | expression_or | expression_and | expression_not) R_PAREN
     ;
 
 
 expression_not
-    : NOT (expression_basic | expression_not | expression_or | expression_and)
+    : NOT (expression_basic | expression_group | expression_not | expression_or | expression_and)
     ;
 
 
@@ -107,7 +112,7 @@ expression_basic
 
 attribute
     : (qualifier COLON)? identifier
-    ; 
+    ;
 
 
 qualifier

@@ -35,12 +35,13 @@ def antlr_parse(input: str) -> FCSParser.QueryContext:
 # ---------------------------------------------------------------------------
 
 
-def parse(input: str) -> QueryNode:
+def parse(input: str, enableSourceLocations: bool = True) -> QueryNode:
     """Simple wrapper to generate a `QueryParser` and to parse some
     input string into a `QueryNode`.
 
     Args:
         input: raw input query string
+        enableSourceLocations: whether source locations are computed for each query node
 
     Returns:
         QueryNode: parsed query
@@ -48,7 +49,7 @@ def parse(input: str) -> QueryNode:
     Throws:
         QueryParserException: if an error occurred
     """
-    parser = QueryParser()
+    parser = QueryParser(enableSourceLocations=enableSourceLocations)
     return parser.parse(input)
 
 

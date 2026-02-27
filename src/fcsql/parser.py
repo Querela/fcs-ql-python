@@ -7,10 +7,12 @@ from enum import Enum
 from typing import Any
 from typing import Deque
 from typing import List
+from typing import Literal
 from typing import Optional
 from typing import Set
 from typing import Tuple
 from typing import Type
+from typing import TypeAlias
 from typing import TypeVar
 
 import antlr4
@@ -31,6 +33,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 _T = TypeVar("_T", bound="QueryNode")
+_UnicodeNormalizationForm: TypeAlias = Literal["NFC", "NFD", "NFKC", "NFKD"]
 
 
 OCCURS_UNBOUNDED = -1
@@ -166,14 +169,38 @@ class QueryVisitor(metaclass=ABCMeta):
 # ---------------------------------------------------------------------------
 
 
+class SourceLocation:
+    """Source information wrapping start and stop offsets in the query text for a query node."""
+
+    def __init__(self, start: int, stop: int):
+        self.start = start
+        self.stop = stop
+
+    @staticmethod
+    def fromContext(ctx: ParserRuleContext):
+        if not ctx:
+            return None
+
+        # start and stop tokens might be null (maybe due to errors)
+        if ctx.start is None or ctx.stop is None:
+            return None
+
+        start = ctx.start.start
+        stop = ctx.stop.stop + 1
+        # NOTE: stop+1 for Java string indexing
+        return SourceLocation(start, stop)
+
+
 class QueryNode(metaclass=ABCMeta):
     """Base class for FCS-QL expression tree nodes."""
 
     def __init__(
         self,
         node_type: QueryNodeType,
+        *,
         children: Optional[List["QueryNode"]] = None,
         child: Optional["QueryNode"] = None,
+        location: Optional[SourceLocation] = None,
     ):
         """[Constructor]
 
@@ -181,6 +208,8 @@ class QueryNode(metaclass=ABCMeta):
             node_type: the type of the node
             children: the children of this node or ``None``. Defaults to None.
             child: the child of this node or ``None``. Defaults to None.
+            location: the source code location for this query node
+                      in the query text content or ``None``. Defaults to None.
         """
         self.node_type = node_type
         """The node type of this node."""
@@ -199,6 +228,9 @@ class QueryNode(metaclass=ABCMeta):
 
         if child:
             self.children.append(child)
+
+        self.location: Optional[SourceLocation] = location
+        """source location information about start/stop offsets for this query node in the query text content"""
 
     def has_node_type(self, node_type: QueryNodeType) -> bool:
         """Check, if node if of given type.
@@ -225,20 +257,20 @@ class QueryNode(metaclass=ABCMeta):
         """
         return len(self.children) if self.children else 0
 
-    def get_child(
-        self, idx: int, clazz: Optional[Type[_T]] = None
-    ) -> Optional["QueryNode"]:
+    def get_child(self, idx: int, clazz: Optional[Type[_T]] = None) -> Optional["QueryNode"]:
         """Get a child node of specified type by index.
 
         When supplied with ``clazz`` parameter, only child nodes of
         the requested type are counted.
 
         Args:
-            idx: the index of the child node (if `clazz` provided, only consideres child nodes of requested type)
+            idx: the index of the child node (if `clazz` provided, only consideres child nodes
+                 of requested type)
             clazz: the type to nodes to be considered, optional
 
         Returns:
-            QueryNode: the child node of this node or ``None`` if not child was found (e.g. type mismatch or index out of bounds)
+            QueryNode: the child node of this node or ``None`` if not child was found
+                       (e.g. type mismatch or index out of bounds)
         """
         if not self.children or idx < 0 or idx > self.child_count:
             return None
@@ -252,9 +284,7 @@ class QueryNode(metaclass=ABCMeta):
                 pos += 1
         return None
 
-    def get_first_child(
-        self, clazz: Optional[Type[_T]] = None
-    ) -> Optional["QueryNode"]:
+    def get_first_child(self, clazz: Optional[Type[_T]] = None) -> Optional["QueryNode"]:
         """Get this first child node.
 
         Args:
@@ -278,7 +308,10 @@ class QueryNode(metaclass=ABCMeta):
 
     def __str__(self) -> str:
         chs = " ".join(map(str, self.children))
-        return f"({self.node_type!s}{' ' + chs if chs else ''})"
+        strrepr = f"({self.node_type!s}{' ' + chs if chs else ''})"
+        if self.location:
+            strrepr += f"@{self.location.start}:{self.location.stop}"
+        return strrepr
 
     @abstractmethod
     def accept(self, visitor: QueryVisitor) -> None:
@@ -426,9 +459,7 @@ class Expression(QueryNode):
         parts.append(f"({self.node_type!s} ")
         parts.append(f"{self.qualifier}:" if self.qualifier else "")
         parts.append(f'{self.identifier} {self.operator!s} "')
-        parts.append(
-            self.regex.translate(str.maketrans({"\n": "\\n", "\r": "\\r", "\t": "\\t"}))  # type: ignore
-        )
+        parts.append(self.regex.translate(str.maketrans({"\n": "\\n", "\r": "\\r", "\t": "\\t"})))  # type: ignore
         parts.append('"')
         if self.regex_flags:
             parts.append("/")
@@ -454,9 +485,7 @@ class ExpressionWildcard(QueryNode):
         children: Optional[List["QueryNode"]] = None,
         child: Optional["QueryNode"] = None,
     ):
-        super().__init__(
-            QueryNodeType.EXPRESSION_WILDCARD, children=children, child=child
-        )
+        super().__init__(QueryNodeType.EXPRESSION_WILDCARD, children=children, child=child)
 
     def accept(self, visitor: QueryVisitor) -> None:
         visitor.visit(self)
@@ -748,7 +777,7 @@ EMPTY_STRING = ""
 
 DEFAULT_IDENTIFIER = "text"
 DEFAULT_OPERATOR = Operator.EQUALS
-DEFAULT_UNICODE_NORMALIZATION_FORM = "NFC"
+DEFAULT_UNICODE_NORMALIZATION_FORM: _UnicodeNormalizationForm = "NFC"
 """Default unicode normalization form.
 
 See also: `unicodedata.normalize
@@ -824,9 +853,7 @@ class ExpressionTreeBuilder(FCSParserListener):
             query = self.stack.pop()
             self.stack.append(QueryWithWithin(query, within))
 
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitQuery: stack=%s", self.stack)
-
+        LOGGER.debug("exitQuery: stack=%s", self.stack)
         return super().exitQuery(ctx)
 
     def enterMain_query(self, ctx: FCSParser.Main_queryContext):
@@ -840,8 +867,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         return super().enterMain_query(ctx)
 
     def exitMain_query(self, ctx: FCSParser.Main_queryContext):
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitMain_query: stack=%s", self.stack)
+        LOGGER.debug("exitMain_query: stack=%s", self.stack)
         return super().exitMain_query(ctx)
 
     def enterQuery_disjunction(self, ctx: FCSParser.Query_disjunctionContext):
@@ -865,8 +891,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         else:
             raise ExpressionTreeBuilderException("exitQuery_disjunction is empty")
 
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitQuery_disjunction: stack=%s", self.stack)
+        LOGGER.debug("exitQuery_disjunction: stack=%s", self.stack)
         return super().exitQuery_disjunction(ctx)
 
     def enterQuery_sequence(self, ctx: FCSParser.Query_sequenceContext):
@@ -890,8 +915,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         else:
             raise ExpressionTreeBuilderException("exitQuery_sequence is empty")
 
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitQuery_sequence: stack=%s", self.stack)
+        LOGGER.debug("exitQuery_sequence: stack=%s", self.stack)
         return super().exitQuery_sequence(ctx)
 
     def enterQuery_group(self, ctx: FCSParser.Query_groupContext):
@@ -916,8 +940,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         content: QueryNode = self.stack.pop()
         self.stack.append(QueryGroup(content, min, max))
 
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitQuery_group: stack=%s", self.stack)
+        LOGGER.debug("exitQuery_group: stack=%s", self.stack)
         return super().exitQuery_group(ctx)
 
     def enterQuery_simple(self, ctx: FCSParser.Query_simpleContext):
@@ -942,8 +965,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         expression: QueryNode = self.stack.pop()
         self.stack.append(QuerySegment(expression, min, max))
 
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitQuery_simple: stack=%s", self.stack)
+        LOGGER.debug("exitQuery_simple: stack=%s", self.stack)
         return super().exitQuery_simple(ctx)
 
     def enterQuery_implicit(self, ctx: FCSParser.Query_implicitContext):
@@ -976,8 +998,7 @@ class ExpressionTreeBuilder(FCSParserListener):
             )
         )
 
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitQuery_implicit: stack=%s", self.stack)
+        LOGGER.debug("exitQuery_implicit: stack=%s", self.stack)
         return super().exitQuery_implicit(ctx)
 
     # TODO: check, abortable, if also exit?
@@ -1000,8 +1021,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         return super().enterQuery_segment(ctx)
 
     def exitQuery_segment(self, ctx: FCSParser.Query_segmentContext):
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitQuery_segment: stack=%s", self.stack)
+        LOGGER.debug("exitQuery_segment: stack=%s", self.stack)
         return super().exitQuery_segment(ctx)
 
     def enterExpression_basic(self, ctx: FCSParser.Expression_basicContext):
@@ -1019,9 +1039,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         elif tok_op.type == FCSLexer.OPERATOR_NE:
             self.stack.append(Operator.NOT_EQUALS)
         else:
-            raise ExpressionTreeBuilderException(
-                f"invalid operator type: {tok_op.text}"
-            )
+            raise ExpressionTreeBuilderException(f"invalid operator type: {tok_op.text}")
 
         return super().enterExpression_basic(ctx)
 
@@ -1042,8 +1060,7 @@ class ExpressionTreeBuilder(FCSParserListener):
             )
         )
 
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitExpression_basic: stack=%s", self.stack)
+        LOGGER.debug("exitExpression_basic: stack=%s", self.stack)
         return super().exitExpression_basic(ctx)
 
     def enterExpression_not(self, ctx: FCSParser.Expression_notContext):
@@ -1060,8 +1077,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         expression: QueryNode = self.stack.pop()
         self.stack.append(ExpressionNot(expression))
 
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitExpression_not: stack=%s", self.stack)
+        LOGGER.debug("exitExpression_not: stack=%s", self.stack)
         return super().exitExpression_not(ctx)
 
     def enterExpression_group(self, ctx: FCSParser.Expression_groupContext):
@@ -1078,8 +1094,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         expression: QueryNode = self.stack.pop()
         self.stack.append(ExpressionGroup(expression))
 
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitExpression_group: stack=%s", self.stack)
+        LOGGER.debug("exitExpression_group: stack=%s", self.stack)
         return super().exitExpression_group(ctx)
 
     def enterExpression_or(self, ctx: FCSParser.Expression_orContext):
@@ -1103,8 +1118,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         else:
             raise ExpressionTreeBuilderException("exitExpression_or is empty")
 
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitExpression_or: stack=%s", self.stack)
+        LOGGER.debug("exitExpression_or: stack=%s", self.stack)
         return super().exitExpression_or(ctx)
 
     def enterExpression_and(self, ctx: FCSParser.Expression_andContext):
@@ -1128,8 +1142,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         else:
             raise ExpressionTreeBuilderException("exitExpression_and is empty")
 
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitExpression_and: stack=%s", self.stack)
+        LOGGER.debug("exitExpression_and: stack=%s", self.stack)
         return super().exitExpression_and(ctx)
 
     # TODO: check, or exit
@@ -1152,8 +1165,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         return super().enterAttribute(ctx)
 
     def exitAttribute(self, ctx: FCSParser.AttributeContext):
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitAttribute: stack=%s", self.stack)
+        LOGGER.debug("exitAttribute: stack=%s", self.stack)
         return super().exitAttribute(ctx)
 
     # TODO: check, or exit
@@ -1196,18 +1208,12 @@ class ExpressionTreeBuilder(FCSParserListener):
                 elif flag == "d":
                     flags.add(RegexFlag.IGNORE_DIACRITICS)
                 else:
-                    raise ExpressionTreeBuilderException(
-                        f"unknown regex modifier flag: {flag}"
-                    )
+                    raise ExpressionTreeBuilderException(f"unknown regex modifier flag: {flag}")
 
             # validate regex flags
-            if (
-                RegexFlag.CASE_SENSITIVE in flags
-                and RegexFlag.CASE_INSENSITIVE in RegexFlag.CASE_SENSITIVE
-            ):
+            if RegexFlag.CASE_SENSITIVE in flags and RegexFlag.CASE_INSENSITIVE in RegexFlag.CASE_SENSITIVE:
                 raise ExpressionTreeBuilderException(
-                    "invalid combination of regex modifier flags: "
-                    "'i' or 'c' and 'I' or 'C' are mutually exclusive"
+                    "invalid combination of regex modifier flags: " "'i' or 'c' and 'I' or 'C' are mutually exclusive"
                 )
             if RegexFlag.LITERAL_MATCHING in flags and any(
                 flag in flags
@@ -1231,8 +1237,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         return super().enterRegexp(ctx)
 
     def exitRegexp(self, ctx: FCSParser.RegexpContext):
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitRegexp: stack=%s", self.stack)
+        LOGGER.debug("exitRegexp: stack=%s", self.stack)
         return super().exitRegexp(ctx)
 
     # TODO: check, abortable, if also exit?
@@ -1260,17 +1265,14 @@ class ExpressionTreeBuilder(FCSParserListener):
         elif val == "session":
             scope = SimpleWithinScope.SESSION
         else:
-            raise ExpressionTreeBuilderException(
-                f"invalid scope for simple 'within' clause: {val}"
-            )
+            raise ExpressionTreeBuilderException(f"invalid scope for simple 'within' clause: {val}")
 
         self.stack.append(SimpleWithin(scope))
 
         return super().enterWithin_part_simple(ctx)
 
     def exitWithin_part_simple(self, ctx: FCSParser.Within_part_simpleContext):
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug("exitWithin_part_simple: stack=%s", self.stack)
+        LOGGER.debug("exitWithin_part_simple: stack=%s", self.stack)
         return super().exitWithin_part_simple(ctx)
 
     # ----------------------------------------------------
@@ -1286,17 +1288,13 @@ class ExpressionTreeBuilder(FCSParserListener):
             return REP_ZERO_OR_ONE
         if tok.type == FCSParser.L_CURLY_BRACKET:  # "{x, y}" variants
             return ExpressionTreeBuilder.processRepetitionRange(ctx)
-        raise ExpressionTreeBuilderException(
-            f"unexpected symbol in repetition quantifier: {tok.text}"
-        )
+        raise ExpressionTreeBuilderException(f"unexpected symbol in repetition quantifier: {tok.text}")
 
     @staticmethod
     def processRepetitionRange(ctx: FCSParser.QuantifierContext) -> Tuple[int, int]:
         comma_idx = ExpressionTreeBuilder.getChildIndex(ctx, 0, FCSParser.Q_COMMA)
         int1_idx = ExpressionTreeBuilder.getChildIndex(ctx, 0, FCSParser.INTEGER)
-        int2_idx = ExpressionTreeBuilder.getChildIndex(
-            ctx, int1_idx + 1, FCSParser.INTEGER
-        )
+        int2_idx = ExpressionTreeBuilder.getChildIndex(ctx, int1_idx + 1, FCSParser.INTEGER)
         min = 0
         max = OCCURS_UNBOUNDED
         if comma_idx != -1:
@@ -1311,9 +1309,7 @@ class ExpressionTreeBuilder(FCSParserListener):
                 raise ExpressionTreeBuilderException("int1_idx == -1")
             min = max = ExpressionTreeBuilder.parseInt(ctx.getChild(int1_idx).getText())
         if max != OCCURS_UNBOUNDED and min > max:
-            raise ExpressionTreeBuilderException(
-                f"bad qualifier: min > max ({min} > {max})"
-            )
+            raise ExpressionTreeBuilderException(f"bad qualifier: min > max ({min} > {max})")
         return (min, max)
 
     @staticmethod
@@ -1339,16 +1335,12 @@ class ExpressionTreeBuilder(FCSParserListener):
             if val.endswith('"'):
                 val = val[1:-1]
             else:
-                raise ExpressionTreeBuilderException(
-                    "value not properly quoted; invalid closing quote"
-                )
+                raise ExpressionTreeBuilderException("value not properly quoted; invalid closing quote")
         elif val.startswith("'"):
             if val.endswith("'"):
                 val = val[1:-1]
             else:
-                raise ExpressionTreeBuilderException(
-                    "value not properly quoted; invalid closing quote"
-                )
+                raise ExpressionTreeBuilderException("value not properly quoted; invalid closing quote")
         else:
             raise ExpressionTreeBuilderException(
                 "value not properly quoted; expected \" (double quote) or ' (single qoute) character"
@@ -1408,9 +1400,7 @@ class ExpressionTreeBuilder(FCSParserListener):
                     chars.append(ExpressionTreeBuilder.unescapeUnicode(val, i, 8))
                     i += 8
                 else:
-                    raise ExpressionTreeBuilderException(
-                        f"invalid escape sequence: \\{cp}"
-                    )
+                    raise ExpressionTreeBuilderException(f"invalid escape sequence: \\{cp}")
             else:
                 # no error should happen here (Python uses unicode by default)
                 # so no back-and-forth with codepoint conversions
@@ -1434,9 +1424,7 @@ class ExpressionTreeBuilder(FCSParserListener):
                 raise ExpressionTreeBuilderException(f"invalid codepoint: U+{cp:X}")
 
         else:
-            raise ExpressionTreeBuilderException(
-                f"truncated escape sequence: \\{val[i]}"
-            )
+            raise ExpressionTreeBuilderException(f"truncated escape sequence: \\{val[i]}")
 
     @staticmethod
     def parseHexChar(val: str) -> int:
@@ -1457,7 +1445,8 @@ class QueryParser:
         self,
         default_identifier: str = DEFAULT_IDENTIFIER,
         default_operator: Operator = DEFAULT_OPERATOR,
-        unicode_normalization_form: Optional[str] = DEFAULT_UNICODE_NORMALIZATION_FORM,
+        unicode_normalization_form: Optional[_UnicodeNormalizationForm] = DEFAULT_UNICODE_NORMALIZATION_FORM,
+        enableSourceLocations: bool = False,
     ) -> None:
         """[Constructor]
 
@@ -1465,10 +1454,13 @@ class QueryParser:
             default_identifier: the default identifier to be used for simple expressions. Defaults to `DEFAULT_IDENTIFIER`.
             default_operator: the default operator. Defaults to `DEFAULT_OPERATOR`.
             unicode_normalization_form: the Unicode normalization form to be used or ``None`` to not perform normlization. Defaults to `DEFAULT_UNICODE_NORMALIZATION_FORM`.
+            enableSourceLocations: whether source locations are computed for each query node. Defaults to False.
         """  # noqa: E501
         self.default_identifier = default_identifier
         self.default_operator = default_operator
         self.unicode_normalization_form = unicode_normalization_form
+        self.enableSourceLocations = enableSourceLocations
+        """Whether source locations are computed for each query node."""
 
     def parse(self, query: str) -> QueryNode:
         """Parse query.
@@ -1499,14 +1491,9 @@ class QueryParser:
             # commence parsing ...
             tree: FCSParser.QueryContext = parser.query()
 
-            if (
-                not error_listener.has_errors()
-                and parser.getNumberOfSyntaxErrors() == 0
-            ):
+            if not error_listener.has_errors() and parser.getNumberOfSyntaxErrors() == 0:
                 if LOGGER.isEnabledFor(logging.DEBUG):
-                    LOGGER.debug(
-                        "ANTLR parse tree: %s", tree.toStringTree(FCSParser.ruleNames)
-                    )
+                    LOGGER.debug("ANTLR parse tree: %s", tree.toStringTree(FCSParser.ruleNames))
 
                 # now build the expression tree
                 builder = ExpressionTreeBuilder(self)
@@ -1519,17 +1506,13 @@ class QueryParser:
                         LOGGER.debug("ERROR: %s", msg)
 
                 # FIXME: (include additional error information)
-                raise QueryParserException(
-                    (error_listener.errors or ["unspecified error"])[0]
-                )
+                raise QueryParserException((error_listener.errors or ["unspecified error"])[0])
         except ExpressionTreeBuilderException as ex:
             raise QueryParserException(str(ex)) from ex
         except QueryParserException:
             raise
         except Exception as ex:
-            raise QueryParserException(
-                "an unexpected exception occured while parsing"
-            ) from ex
+            raise QueryParserException("an unexpected exception occured while parsing") from ex
 
 
 # ---------------------------------------------------------------------------

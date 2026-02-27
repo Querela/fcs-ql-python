@@ -128,7 +128,9 @@ fragment ESCAPED_CHAR
         | '('
         | ')'
         | '{'
+        | '}'
         | '['
+        | ']'
         | '|'
         | 'x' HEX HEX
         | 'u' HEX HEX HEX HEX

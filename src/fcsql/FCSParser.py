@@ -1,4 +1,4 @@
-# Generated from FCSParser.g4 by ANTLR 4.11.1
+# Generated from FCSParser.g4 by ANTLR 4.13.2
 # encoding: utf-8
 from antlr4 import *
 from io import StringIO
@@ -10,7 +10,7 @@ else:
 
 def serializedATN():
     return [
-        4,1,25,208,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
+        4,1,25,211,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
         6,2,7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,
         2,14,7,14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,20,
         7,20,2,21,7,21,2,22,7,22,1,0,1,0,1,0,3,0,50,8,0,1,0,1,0,1,1,1,1,
@@ -22,70 +22,72 @@ def serializedATN():
         8,1,8,1,8,1,9,1,9,1,10,1,10,1,11,1,11,1,11,1,11,1,11,3,11,134,8,
         11,1,12,1,12,1,12,1,12,3,12,140,8,12,1,12,1,12,1,12,1,12,1,12,3,
         12,147,8,12,4,12,149,8,12,11,12,12,12,150,1,13,1,13,1,13,3,13,156,
-        8,13,1,13,1,13,1,13,1,13,3,13,162,8,13,4,13,164,8,13,11,13,12,13,
-        165,1,14,1,14,1,14,1,14,1,14,3,14,173,8,14,1,14,1,14,1,15,1,15,1,
-        15,1,15,1,15,3,15,182,8,15,1,16,1,16,1,16,1,16,1,17,1,17,1,17,3,
-        17,191,8,17,1,17,1,17,1,18,1,18,1,19,1,19,1,20,1,20,1,20,3,20,202,
-        8,20,1,21,1,21,1,22,1,22,1,22,0,0,23,0,2,4,6,8,10,12,14,16,18,20,
-        22,24,26,28,30,32,34,36,38,40,42,44,0,2,1,0,15,16,1,0,18,21,231,
-        0,46,1,0,0,0,2,57,1,0,0,0,4,62,1,0,0,0,6,76,1,0,0,0,8,80,1,0,0,0,
-        10,91,1,0,0,0,12,114,1,0,0,0,14,116,1,0,0,0,16,118,1,0,0,0,18,124,
-        1,0,0,0,20,126,1,0,0,0,22,133,1,0,0,0,24,139,1,0,0,0,26,155,1,0,
-        0,0,28,167,1,0,0,0,30,176,1,0,0,0,32,183,1,0,0,0,34,190,1,0,0,0,
-        36,194,1,0,0,0,38,196,1,0,0,0,40,198,1,0,0,0,42,203,1,0,0,0,44,205,
-        1,0,0,0,46,49,3,2,1,0,47,48,5,18,0,0,48,50,3,18,9,0,49,47,1,0,0,
-        0,49,50,1,0,0,0,50,51,1,0,0,0,51,52,5,0,0,1,52,1,1,0,0,0,53,58,3,
-        10,5,0,54,58,3,8,4,0,55,58,3,6,3,0,56,58,3,4,2,0,57,53,1,0,0,0,57,
-        54,1,0,0,0,57,55,1,0,0,0,57,56,1,0,0,0,58,3,1,0,0,0,59,63,3,10,5,
-        0,60,63,3,6,3,0,61,63,3,8,4,0,62,59,1,0,0,0,62,60,1,0,0,0,62,61,
-        1,0,0,0,63,70,1,0,0,0,64,68,5,5,0,0,65,69,3,10,5,0,66,69,3,6,3,0,
-        67,69,3,8,4,0,68,65,1,0,0,0,68,66,1,0,0,0,68,67,1,0,0,0,69,71,1,
-        0,0,0,70,64,1,0,0,0,71,72,1,0,0,0,72,70,1,0,0,0,72,73,1,0,0,0,73,
-        5,1,0,0,0,74,77,3,10,5,0,75,77,3,8,4,0,76,74,1,0,0,0,76,75,1,0,0,
-        0,77,78,1,0,0,0,78,76,1,0,0,0,78,79,1,0,0,0,79,7,1,0,0,0,80,83,5,
-        1,0,0,81,84,3,4,2,0,82,84,3,6,3,0,83,81,1,0,0,0,83,82,1,0,0,0,84,
-        85,1,0,0,0,85,87,5,2,0,0,86,88,3,12,6,0,87,86,1,0,0,0,87,88,1,0,
-        0,0,88,9,1,0,0,0,89,92,3,14,7,0,90,92,3,16,8,0,91,89,1,0,0,0,91,
-        90,1,0,0,0,92,94,1,0,0,0,93,95,3,12,6,0,94,93,1,0,0,0,94,95,1,0,
-        0,0,95,11,1,0,0,0,96,115,5,11,0,0,97,115,5,12,0,0,98,115,5,13,0,
-        0,99,111,5,9,0,0,100,112,5,22,0,0,101,103,5,22,0,0,102,101,1,0,0,
-        0,102,103,1,0,0,0,103,104,1,0,0,0,104,105,5,14,0,0,105,112,5,22,
-        0,0,106,107,5,22,0,0,107,109,5,14,0,0,108,110,5,22,0,0,109,108,1,
-        0,0,0,109,110,1,0,0,0,110,112,1,0,0,0,111,100,1,0,0,0,111,102,1,
-        0,0,0,111,106,1,0,0,0,112,113,1,0,0,0,113,115,5,10,0,0,114,96,1,
-        0,0,0,114,97,1,0,0,0,114,98,1,0,0,0,114,99,1,0,0,0,115,13,1,0,0,
-        0,116,117,3,40,20,0,117,15,1,0,0,0,118,120,5,3,0,0,119,121,3,22,
-        11,0,120,119,1,0,0,0,120,121,1,0,0,0,121,122,1,0,0,0,122,123,5,4,
-        0,0,123,17,1,0,0,0,124,125,3,20,10,0,125,19,1,0,0,0,126,127,5,19,
-        0,0,127,21,1,0,0,0,128,134,3,32,16,0,129,134,3,30,15,0,130,134,3,
-        28,14,0,131,134,3,24,12,0,132,134,3,26,13,0,133,128,1,0,0,0,133,
-        129,1,0,0,0,133,130,1,0,0,0,133,131,1,0,0,0,133,132,1,0,0,0,134,
-        23,1,0,0,0,135,140,3,32,16,0,136,140,3,28,14,0,137,140,3,30,15,0,
-        138,140,3,26,13,0,139,135,1,0,0,0,139,136,1,0,0,0,139,137,1,0,0,
-        0,139,138,1,0,0,0,140,148,1,0,0,0,141,146,5,5,0,0,142,147,3,32,16,
-        0,143,147,3,28,14,0,144,147,3,30,15,0,145,147,3,26,13,0,146,142,
-        1,0,0,0,146,143,1,0,0,0,146,144,1,0,0,0,146,145,1,0,0,0,147,149,
-        1,0,0,0,148,141,1,0,0,0,149,150,1,0,0,0,150,148,1,0,0,0,150,151,
-        1,0,0,0,151,25,1,0,0,0,152,156,3,32,16,0,153,156,3,28,14,0,154,156,
-        3,30,15,0,155,152,1,0,0,0,155,153,1,0,0,0,155,154,1,0,0,0,156,163,
-        1,0,0,0,157,161,5,6,0,0,158,162,3,32,16,0,159,162,3,28,14,0,160,
-        162,3,30,15,0,161,158,1,0,0,0,161,159,1,0,0,0,161,160,1,0,0,0,162,
-        164,1,0,0,0,163,157,1,0,0,0,164,165,1,0,0,0,165,163,1,0,0,0,165,
-        166,1,0,0,0,166,27,1,0,0,0,167,172,5,1,0,0,168,173,3,32,16,0,169,
-        173,3,30,15,0,170,173,3,24,12,0,171,173,3,26,13,0,172,168,1,0,0,
-        0,172,169,1,0,0,0,172,170,1,0,0,0,172,171,1,0,0,0,173,174,1,0,0,
-        0,174,175,5,2,0,0,175,29,1,0,0,0,176,181,5,7,0,0,177,182,3,32,16,
-        0,178,182,3,30,15,0,179,182,3,24,12,0,180,182,3,26,13,0,181,177,
-        1,0,0,0,181,178,1,0,0,0,181,179,1,0,0,0,181,180,1,0,0,0,182,31,1,
-        0,0,0,183,184,3,34,17,0,184,185,7,0,0,0,185,186,3,40,20,0,186,33,
-        1,0,0,0,187,188,3,36,18,0,188,189,5,17,0,0,189,191,1,0,0,0,190,187,
-        1,0,0,0,190,191,1,0,0,0,191,192,1,0,0,0,192,193,3,38,19,0,193,35,
-        1,0,0,0,194,195,7,1,0,0,195,37,1,0,0,0,196,197,7,1,0,0,197,39,1,
-        0,0,0,198,201,3,42,21,0,199,200,5,8,0,0,200,202,3,44,22,0,201,199,
-        1,0,0,0,201,202,1,0,0,0,202,41,1,0,0,0,203,204,5,23,0,0,204,43,1,
-        0,0,0,205,206,5,20,0,0,206,45,1,0,0,0,27,49,57,62,68,72,76,78,83,
-        87,91,94,102,109,111,114,120,133,139,146,150,155,161,165,172,181,
-        190,201
+        8,13,1,13,1,13,1,13,1,13,1,13,3,13,163,8,13,4,13,165,8,13,11,13,
+        12,13,166,1,14,1,14,1,14,1,14,1,14,1,14,3,14,175,8,14,1,14,1,14,
+        1,15,1,15,1,15,1,15,1,15,1,15,3,15,185,8,15,1,16,1,16,1,16,1,16,
+        1,17,1,17,1,17,3,17,194,8,17,1,17,1,17,1,18,1,18,1,19,1,19,1,20,
+        1,20,1,20,3,20,205,8,20,1,21,1,21,1,22,1,22,1,22,0,0,23,0,2,4,6,
+        8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,0,2,1,0,
+        15,16,1,0,18,21,237,0,46,1,0,0,0,2,57,1,0,0,0,4,62,1,0,0,0,6,76,
+        1,0,0,0,8,80,1,0,0,0,10,91,1,0,0,0,12,114,1,0,0,0,14,116,1,0,0,0,
+        16,118,1,0,0,0,18,124,1,0,0,0,20,126,1,0,0,0,22,133,1,0,0,0,24,139,
+        1,0,0,0,26,155,1,0,0,0,28,168,1,0,0,0,30,178,1,0,0,0,32,186,1,0,
+        0,0,34,193,1,0,0,0,36,197,1,0,0,0,38,199,1,0,0,0,40,201,1,0,0,0,
+        42,206,1,0,0,0,44,208,1,0,0,0,46,49,3,2,1,0,47,48,5,18,0,0,48,50,
+        3,18,9,0,49,47,1,0,0,0,49,50,1,0,0,0,50,51,1,0,0,0,51,52,5,0,0,1,
+        52,1,1,0,0,0,53,58,3,10,5,0,54,58,3,8,4,0,55,58,3,6,3,0,56,58,3,
+        4,2,0,57,53,1,0,0,0,57,54,1,0,0,0,57,55,1,0,0,0,57,56,1,0,0,0,58,
+        3,1,0,0,0,59,63,3,10,5,0,60,63,3,6,3,0,61,63,3,8,4,0,62,59,1,0,0,
+        0,62,60,1,0,0,0,62,61,1,0,0,0,63,70,1,0,0,0,64,68,5,5,0,0,65,69,
+        3,10,5,0,66,69,3,6,3,0,67,69,3,8,4,0,68,65,1,0,0,0,68,66,1,0,0,0,
+        68,67,1,0,0,0,69,71,1,0,0,0,70,64,1,0,0,0,71,72,1,0,0,0,72,70,1,
+        0,0,0,72,73,1,0,0,0,73,5,1,0,0,0,74,77,3,10,5,0,75,77,3,8,4,0,76,
+        74,1,0,0,0,76,75,1,0,0,0,77,78,1,0,0,0,78,76,1,0,0,0,78,79,1,0,0,
+        0,79,7,1,0,0,0,80,83,5,1,0,0,81,84,3,4,2,0,82,84,3,6,3,0,83,81,1,
+        0,0,0,83,82,1,0,0,0,84,85,1,0,0,0,85,87,5,2,0,0,86,88,3,12,6,0,87,
+        86,1,0,0,0,87,88,1,0,0,0,88,9,1,0,0,0,89,92,3,14,7,0,90,92,3,16,
+        8,0,91,89,1,0,0,0,91,90,1,0,0,0,92,94,1,0,0,0,93,95,3,12,6,0,94,
+        93,1,0,0,0,94,95,1,0,0,0,95,11,1,0,0,0,96,115,5,11,0,0,97,115,5,
+        12,0,0,98,115,5,13,0,0,99,111,5,9,0,0,100,112,5,22,0,0,101,103,5,
+        22,0,0,102,101,1,0,0,0,102,103,1,0,0,0,103,104,1,0,0,0,104,105,5,
+        14,0,0,105,112,5,22,0,0,106,107,5,22,0,0,107,109,5,14,0,0,108,110,
+        5,22,0,0,109,108,1,0,0,0,109,110,1,0,0,0,110,112,1,0,0,0,111,100,
+        1,0,0,0,111,102,1,0,0,0,111,106,1,0,0,0,112,113,1,0,0,0,113,115,
+        5,10,0,0,114,96,1,0,0,0,114,97,1,0,0,0,114,98,1,0,0,0,114,99,1,0,
+        0,0,115,13,1,0,0,0,116,117,3,40,20,0,117,15,1,0,0,0,118,120,5,3,
+        0,0,119,121,3,22,11,0,120,119,1,0,0,0,120,121,1,0,0,0,121,122,1,
+        0,0,0,122,123,5,4,0,0,123,17,1,0,0,0,124,125,3,20,10,0,125,19,1,
+        0,0,0,126,127,5,19,0,0,127,21,1,0,0,0,128,134,3,32,16,0,129,134,
+        3,28,14,0,130,134,3,24,12,0,131,134,3,26,13,0,132,134,3,30,15,0,
+        133,128,1,0,0,0,133,129,1,0,0,0,133,130,1,0,0,0,133,131,1,0,0,0,
+        133,132,1,0,0,0,134,23,1,0,0,0,135,140,3,32,16,0,136,140,3,28,14,
+        0,137,140,3,26,13,0,138,140,3,30,15,0,139,135,1,0,0,0,139,136,1,
+        0,0,0,139,137,1,0,0,0,139,138,1,0,0,0,140,148,1,0,0,0,141,146,5,
+        5,0,0,142,147,3,32,16,0,143,147,3,28,14,0,144,147,3,26,13,0,145,
+        147,3,30,15,0,146,142,1,0,0,0,146,143,1,0,0,0,146,144,1,0,0,0,146,
+        145,1,0,0,0,147,149,1,0,0,0,148,141,1,0,0,0,149,150,1,0,0,0,150,
+        148,1,0,0,0,150,151,1,0,0,0,151,25,1,0,0,0,152,156,3,32,16,0,153,
+        156,3,28,14,0,154,156,3,30,15,0,155,152,1,0,0,0,155,153,1,0,0,0,
+        155,154,1,0,0,0,156,164,1,0,0,0,157,162,5,6,0,0,158,163,3,32,16,
+        0,159,163,3,28,14,0,160,163,3,24,12,0,161,163,3,30,15,0,162,158,
+        1,0,0,0,162,159,1,0,0,0,162,160,1,0,0,0,162,161,1,0,0,0,163,165,
+        1,0,0,0,164,157,1,0,0,0,165,166,1,0,0,0,166,164,1,0,0,0,166,167,
+        1,0,0,0,167,27,1,0,0,0,168,174,5,1,0,0,169,175,3,32,16,0,170,175,
+        3,28,14,0,171,175,3,24,12,0,172,175,3,26,13,0,173,175,3,30,15,0,
+        174,169,1,0,0,0,174,170,1,0,0,0,174,171,1,0,0,0,174,172,1,0,0,0,
+        174,173,1,0,0,0,175,176,1,0,0,0,176,177,5,2,0,0,177,29,1,0,0,0,178,
+        184,5,7,0,0,179,185,3,32,16,0,180,185,3,28,14,0,181,185,3,30,15,
+        0,182,185,3,24,12,0,183,185,3,26,13,0,184,179,1,0,0,0,184,180,1,
+        0,0,0,184,181,1,0,0,0,184,182,1,0,0,0,184,183,1,0,0,0,185,31,1,0,
+        0,0,186,187,3,34,17,0,187,188,7,0,0,0,188,189,3,40,20,0,189,33,1,
+        0,0,0,190,191,3,36,18,0,191,192,5,17,0,0,192,194,1,0,0,0,193,190,
+        1,0,0,0,193,194,1,0,0,0,194,195,1,0,0,0,195,196,3,38,19,0,196,35,
+        1,0,0,0,197,198,7,1,0,0,198,37,1,0,0,0,199,200,7,1,0,0,200,39,1,
+        0,0,0,201,204,3,42,21,0,202,203,5,8,0,0,203,205,3,44,22,0,204,202,
+        1,0,0,0,204,205,1,0,0,0,205,41,1,0,0,0,206,207,5,23,0,0,207,43,1,
+        0,0,0,208,209,5,20,0,0,209,45,1,0,0,0,27,49,57,62,68,72,76,78,83,
+        87,91,94,102,109,111,114,120,133,139,146,150,155,162,166,174,184,
+        193,204
     ]
 
 class FCSParser ( Parser ):
@@ -170,7 +172,7 @@ class FCSParser ( Parser ):
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
-        self.checkVersion("4.11.1")
+        self.checkVersion("4.13.2")
         self._interp = ParserATNSimulator(self, self.atn, self.decisionsToDFA, self.sharedContextCache)
         self._predicates = None
 
@@ -208,6 +210,12 @@ class FCSParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitQuery" ):
                 listener.exitQuery(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitQuery" ):
+                return visitor.visitQuery(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -275,6 +283,12 @@ class FCSParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitMain_query" ):
                 listener.exitMain_query(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitMain_query" ):
+                return visitor.visitMain_query(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -365,6 +379,12 @@ class FCSParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitQuery_disjunction" ):
                 listener.exitQuery_disjunction(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitQuery_disjunction" ):
+                return visitor.visitQuery_disjunction(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -467,6 +487,12 @@ class FCSParser ( Parser ):
             if hasattr( listener, "exitQuery_sequence" ):
                 listener.exitQuery_sequence(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitQuery_sequence" ):
+                return visitor.visitQuery_sequence(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -498,7 +524,7 @@ class FCSParser ( Parser ):
                 self.state = 78 
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if not (((_la) & ~0x3f) == 0 and ((1 << _la) & 8388618) != 0):
+                if not ((((_la) & ~0x3f) == 0 and ((1 << _la) & 8388618) != 0)):
                     break
 
         except RecognitionException as re:
@@ -546,6 +572,12 @@ class FCSParser ( Parser ):
             if hasattr( listener, "exitQuery_group" ):
                 listener.exitQuery_group(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitQuery_group" ):
+                return visitor.visitQuery_group(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -577,7 +609,7 @@ class FCSParser ( Parser ):
             self.state = 87
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if ((_la) & ~0x3f) == 0 and ((1 << _la) & 14848) != 0:
+            if (((_la) & ~0x3f) == 0 and ((1 << _la) & 14848) != 0):
                 self.state = 86
                 self.quantifier()
 
@@ -621,6 +653,12 @@ class FCSParser ( Parser ):
             if hasattr( listener, "exitQuery_simple" ):
                 listener.exitQuery_simple(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitQuery_simple" ):
+                return visitor.visitQuery_simple(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -648,7 +686,7 @@ class FCSParser ( Parser ):
             self.state = 94
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if ((_la) & ~0x3f) == 0 and ((1 << _la) & 14848) != 0:
+            if (((_la) & ~0x3f) == 0 and ((1 << _la) & 14848) != 0):
                 self.state = 93
                 self.quantifier()
 
@@ -703,6 +741,12 @@ class FCSParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitQuantifier" ):
                 listener.exitQuantifier(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitQuantifier" ):
+                return visitor.visitQuantifier(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -808,6 +852,12 @@ class FCSParser ( Parser ):
             if hasattr( listener, "exitQuery_implicit" ):
                 listener.exitQuery_implicit(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitQuery_implicit" ):
+                return visitor.visitQuery_implicit(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -856,6 +906,12 @@ class FCSParser ( Parser ):
             if hasattr( listener, "exitQuery_segment" ):
                 listener.exitQuery_segment(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitQuery_segment" ):
+                return visitor.visitQuery_segment(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -871,7 +927,7 @@ class FCSParser ( Parser ):
             self.state = 120
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if ((_la) & ~0x3f) == 0 and ((1 << _la) & 3932290) != 0:
+            if (((_la) & ~0x3f) == 0 and ((1 << _la) & 3932290) != 0):
                 self.state = 119
                 self.expression()
 
@@ -908,6 +964,12 @@ class FCSParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitWithin_part" ):
                 listener.exitWithin_part(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitWithin_part" ):
+                return visitor.visitWithin_part(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -950,6 +1012,12 @@ class FCSParser ( Parser ):
             if hasattr( listener, "exitWithin_part_simple" ):
                 listener.exitWithin_part_simple(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitWithin_part_simple" ):
+                return visitor.visitWithin_part_simple(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -981,10 +1049,6 @@ class FCSParser ( Parser ):
             return self.getTypedRuleContext(FCSParser.Expression_basicContext,0)
 
 
-        def expression_not(self):
-            return self.getTypedRuleContext(FCSParser.Expression_notContext,0)
-
-
         def expression_group(self):
             return self.getTypedRuleContext(FCSParser.Expression_groupContext,0)
 
@@ -997,6 +1061,10 @@ class FCSParser ( Parser ):
             return self.getTypedRuleContext(FCSParser.Expression_andContext,0)
 
 
+        def expression_not(self):
+            return self.getTypedRuleContext(FCSParser.Expression_notContext,0)
+
+
         def getRuleIndex(self):
             return FCSParser.RULE_expression
 
@@ -1007,6 +1075,12 @@ class FCSParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitExpression" ):
                 listener.exitExpression(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitExpression" ):
+                return visitor.visitExpression(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1028,25 +1102,25 @@ class FCSParser ( Parser ):
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 129
-                self.expression_not()
+                self.expression_group()
                 pass
 
             elif la_ == 3:
                 self.enterOuterAlt(localctx, 3)
                 self.state = 130
-                self.expression_group()
+                self.expression_or()
                 pass
 
             elif la_ == 4:
                 self.enterOuterAlt(localctx, 4)
                 self.state = 131
-                self.expression_or()
+                self.expression_and()
                 pass
 
             elif la_ == 5:
                 self.enterOuterAlt(localctx, 5)
                 self.state = 132
-                self.expression_and()
+                self.expression_not()
                 pass
 
 
@@ -1080,18 +1154,18 @@ class FCSParser ( Parser ):
                 return self.getTypedRuleContext(FCSParser.Expression_groupContext,i)
 
 
-        def expression_not(self, i:int=None):
-            if i is None:
-                return self.getTypedRuleContexts(FCSParser.Expression_notContext)
-            else:
-                return self.getTypedRuleContext(FCSParser.Expression_notContext,i)
-
-
         def expression_and(self, i:int=None):
             if i is None:
                 return self.getTypedRuleContexts(FCSParser.Expression_andContext)
             else:
                 return self.getTypedRuleContext(FCSParser.Expression_andContext,i)
+
+
+        def expression_not(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(FCSParser.Expression_notContext)
+            else:
+                return self.getTypedRuleContext(FCSParser.Expression_notContext,i)
 
 
         def OR(self, i:int=None):
@@ -1110,6 +1184,12 @@ class FCSParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitExpression_or" ):
                 listener.exitExpression_or(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitExpression_or" ):
+                return visitor.visitExpression_or(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1135,12 +1215,12 @@ class FCSParser ( Parser ):
 
             elif la_ == 3:
                 self.state = 137
-                self.expression_not()
+                self.expression_and()
                 pass
 
             elif la_ == 4:
                 self.state = 138
-                self.expression_and()
+                self.expression_not()
                 pass
 
 
@@ -1166,12 +1246,12 @@ class FCSParser ( Parser ):
 
                     elif la_ == 3:
                         self.state = 144
-                        self.expression_not()
+                        self.expression_and()
                         pass
 
                     elif la_ == 4:
                         self.state = 145
-                        self.expression_and()
+                        self.expression_not()
                         pass
 
 
@@ -1225,6 +1305,13 @@ class FCSParser ( Parser ):
             else:
                 return self.getToken(FCSParser.AND, i)
 
+        def expression_or(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(FCSParser.Expression_orContext)
+            else:
+                return self.getTypedRuleContext(FCSParser.Expression_orContext,i)
+
+
         def getRuleIndex(self):
             return FCSParser.RULE_expression_and
 
@@ -1235,6 +1322,12 @@ class FCSParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitExpression_and" ):
                 listener.exitExpression_and(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitExpression_and" ):
+                return visitor.visitExpression_and(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1263,35 +1356,41 @@ class FCSParser ( Parser ):
             else:
                 raise NoViableAltException(self)
 
-            self.state = 163 
+            self.state = 164 
             self._errHandler.sync(self)
             _alt = 1
             while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
                 if _alt == 1:
                     self.state = 157
                     self.match(FCSParser.AND)
-                    self.state = 161
+                    self.state = 162
                     self._errHandler.sync(self)
-                    token = self._input.LA(1)
-                    if token in [18, 19, 20, 21]:
+                    la_ = self._interp.adaptivePredict(self._input,21,self._ctx)
+                    if la_ == 1:
                         self.state = 158
                         self.expression_basic()
                         pass
-                    elif token in [1]:
+
+                    elif la_ == 2:
                         self.state = 159
                         self.expression_group()
                         pass
-                    elif token in [7]:
+
+                    elif la_ == 3:
                         self.state = 160
+                        self.expression_or()
+                        pass
+
+                    elif la_ == 4:
+                        self.state = 161
                         self.expression_not()
                         pass
-                    else:
-                        raise NoViableAltException(self)
+
 
 
                 else:
                     raise NoViableAltException(self)
-                self.state = 165 
+                self.state = 166 
                 self._errHandler.sync(self)
                 _alt = self._interp.adaptivePredict(self._input,22,self._ctx)
 
@@ -1321,8 +1420,8 @@ class FCSParser ( Parser ):
             return self.getTypedRuleContext(FCSParser.Expression_basicContext,0)
 
 
-        def expression_not(self):
-            return self.getTypedRuleContext(FCSParser.Expression_notContext,0)
+        def expression_group(self):
+            return self.getTypedRuleContext(FCSParser.Expression_groupContext,0)
 
 
         def expression_or(self):
@@ -1331,6 +1430,10 @@ class FCSParser ( Parser ):
 
         def expression_and(self):
             return self.getTypedRuleContext(FCSParser.Expression_andContext,0)
+
+
+        def expression_not(self):
+            return self.getTypedRuleContext(FCSParser.Expression_notContext,0)
 
 
         def getRuleIndex(self):
@@ -1344,6 +1447,12 @@ class FCSParser ( Parser ):
             if hasattr( listener, "exitExpression_group" ):
                 listener.exitExpression_group(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitExpression_group" ):
+                return visitor.visitExpression_group(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1353,33 +1462,38 @@ class FCSParser ( Parser ):
         self.enterRule(localctx, 28, self.RULE_expression_group)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 167
+            self.state = 168
             self.match(FCSParser.L_PAREN)
-            self.state = 172
+            self.state = 174
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,23,self._ctx)
             if la_ == 1:
-                self.state = 168
+                self.state = 169
                 self.expression_basic()
                 pass
 
             elif la_ == 2:
-                self.state = 169
-                self.expression_not()
+                self.state = 170
+                self.expression_group()
                 pass
 
             elif la_ == 3:
-                self.state = 170
+                self.state = 171
                 self.expression_or()
                 pass
 
             elif la_ == 4:
-                self.state = 171
+                self.state = 172
                 self.expression_and()
                 pass
 
+            elif la_ == 5:
+                self.state = 173
+                self.expression_not()
+                pass
 
-            self.state = 174
+
+            self.state = 176
             self.match(FCSParser.R_PAREN)
         except RecognitionException as re:
             localctx.exception = re
@@ -1402,6 +1516,10 @@ class FCSParser ( Parser ):
 
         def expression_basic(self):
             return self.getTypedRuleContext(FCSParser.Expression_basicContext,0)
+
+
+        def expression_group(self):
+            return self.getTypedRuleContext(FCSParser.Expression_groupContext,0)
 
 
         def expression_not(self):
@@ -1427,6 +1545,12 @@ class FCSParser ( Parser ):
             if hasattr( listener, "exitExpression_not" ):
                 listener.exitExpression_not(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitExpression_not" ):
+                return visitor.visitExpression_not(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1436,28 +1560,33 @@ class FCSParser ( Parser ):
         self.enterRule(localctx, 30, self.RULE_expression_not)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 176
+            self.state = 178
             self.match(FCSParser.NOT)
-            self.state = 181
+            self.state = 184
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,24,self._ctx)
             if la_ == 1:
-                self.state = 177
+                self.state = 179
                 self.expression_basic()
                 pass
 
             elif la_ == 2:
-                self.state = 178
-                self.expression_not()
+                self.state = 180
+                self.expression_group()
                 pass
 
             elif la_ == 3:
-                self.state = 179
-                self.expression_or()
+                self.state = 181
+                self.expression_not()
                 pass
 
             elif la_ == 4:
-                self.state = 180
+                self.state = 182
+                self.expression_or()
+                pass
+
+            elif la_ == 5:
+                self.state = 183
                 self.expression_and()
                 pass
 
@@ -1503,6 +1632,12 @@ class FCSParser ( Parser ):
             if hasattr( listener, "exitExpression_basic" ):
                 listener.exitExpression_basic(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitExpression_basic" ):
+                return visitor.visitExpression_basic(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1513,16 +1648,16 @@ class FCSParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 183
+            self.state = 186
             self.attribute()
-            self.state = 184
+            self.state = 187
             _la = self._input.LA(1)
             if not(_la==15 or _la==16):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
                 self.consume()
-            self.state = 185
+            self.state = 188
             self.regexp()
         except RecognitionException as re:
             localctx.exception = re
@@ -1562,6 +1697,12 @@ class FCSParser ( Parser ):
             if hasattr( listener, "exitAttribute" ):
                 listener.exitAttribute(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitAttribute" ):
+                return visitor.visitAttribute(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1571,17 +1712,17 @@ class FCSParser ( Parser ):
         self.enterRule(localctx, 34, self.RULE_attribute)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 190
+            self.state = 193
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,25,self._ctx)
             if la_ == 1:
-                self.state = 187
+                self.state = 190
                 self.qualifier()
-                self.state = 188
+                self.state = 191
                 self.match(FCSParser.COLON)
 
 
-            self.state = 192
+            self.state = 195
             self.identifier()
         except RecognitionException as re:
             localctx.exception = re
@@ -1622,6 +1763,12 @@ class FCSParser ( Parser ):
             if hasattr( listener, "exitQualifier" ):
                 listener.exitQualifier(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitQualifier" ):
+                return visitor.visitQualifier(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1632,9 +1779,9 @@ class FCSParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 194
+            self.state = 197
             _la = self._input.LA(1)
-            if not(((_la) & ~0x3f) == 0 and ((1 << _la) & 3932160) != 0):
+            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & 3932160) != 0)):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -1678,6 +1825,12 @@ class FCSParser ( Parser ):
             if hasattr( listener, "exitIdentifier" ):
                 listener.exitIdentifier(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitIdentifier" ):
+                return visitor.visitIdentifier(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1688,9 +1841,9 @@ class FCSParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 196
+            self.state = 199
             _la = self._input.LA(1)
-            if not(((_la) & ~0x3f) == 0 and ((1 << _la) & 3932160) != 0):
+            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & 3932160) != 0)):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -1733,6 +1886,12 @@ class FCSParser ( Parser ):
             if hasattr( listener, "exitRegexp" ):
                 listener.exitRegexp(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitRegexp" ):
+                return visitor.visitRegexp(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1743,15 +1902,15 @@ class FCSParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 198
-            self.regexp_pattern()
             self.state = 201
+            self.regexp_pattern()
+            self.state = 204
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==8:
-                self.state = 199
+                self.state = 202
                 self.match(FCSParser.FWD_SLASH)
-                self.state = 200
+                self.state = 203
                 self.regexp_flag()
 
 
@@ -1785,6 +1944,12 @@ class FCSParser ( Parser ):
             if hasattr( listener, "exitRegexp_pattern" ):
                 listener.exitRegexp_pattern(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitRegexp_pattern" ):
+                return visitor.visitRegexp_pattern(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1794,7 +1959,7 @@ class FCSParser ( Parser ):
         self.enterRule(localctx, 42, self.RULE_regexp_pattern)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 203
+            self.state = 206
             self.match(FCSParser.REGEXP)
         except RecognitionException as re:
             localctx.exception = re
@@ -1826,6 +1991,12 @@ class FCSParser ( Parser ):
             if hasattr( listener, "exitRegexp_flag" ):
                 listener.exitRegexp_flag(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitRegexp_flag" ):
+                return visitor.visitRegexp_flag(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1835,7 +2006,7 @@ class FCSParser ( Parser ):
         self.enterRule(localctx, 44, self.RULE_regexp_flag)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 205
+            self.state = 208
             self.match(FCSParser.REGEXP_FLAGS)
         except RecognitionException as re:
             localctx.exception = re

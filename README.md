@@ -1,6 +1,7 @@
 # FCS-QL for Python
 
 <!-- START: BADGES -->
+
 [![](https://img.shields.io/badge/%20code%20style-black-000000)](https://github.com/psf/black)
 [![](https://img.shields.io/badge/%20imports-isort-%231674b1)](https://pycqa.github.io/isort/)
 [![](https://img.shields.io/badge/linting-flake8-yellowgreen)](https://github.com/PyCQA/flake8)  
@@ -11,6 +12,7 @@
 [![CI: Python package](https://github.com/Querela/fcs-ql-python/actions/workflows/python-package.yml/badge.svg)](https://github.com/Querela/fcs-ql-python/actions/workflows/python-package.yml)
 [![](https://img.shields.io/github/last-commit/Querela/fcs-ql-python)](https://github.com/Querela/fcs-ql-python/commits/main)
 [![Documentation Status](https://readthedocs.org/projects/fcs-ql-python/badge/?version=latest)](https://fcs-ql-python.readthedocs.io/en/latest/?badge=latest)
+
 <!-- END: BADGES -->
 
 - CLARIN-FCS Core 2.0 query language grammar and parser
@@ -18,95 +20,105 @@
   and [Github: clarin-eric/fcs-simple-endpoint](https://github.com/clarin-eric/fcs-simple-endpoint)
 - for more details visit: [CLARIN FCS Technical Details](https://www.clarin.eu/content/federated-content-search-clarin-fcs-technical-details)
 
-
 ## Installation
 
+Install from PyPI:
+
 ```bash
+python3 -m pip install fcs-ql-parser
+```
+
+Or install from source:
+
+```bash
+git clone https://github.com/Querela/fcs-ql-python.git
+cd fcs-ql-python
+uv build
+
 # built package
-python3 -m pip install dist/fcs_ql_parser-<version>-py2.py3-none-any.whl
+python3 -m pip install dist/fcs_ql_parser-<version>-py3-none-any.whl
 # or
-python3 -m pip install dist/fcs-ql-parser-<version>.tar.gz
+python3 -m pip install dist/fcs_ql_parser-<version>.tar.gz
 
 # for local development
 python3 -m pip install -e .
 ```
 
-
-## Building
-
-Fetch (or update) grammar files:
-```bash
-git clone https://github.com/clarin-eric/fcs-ql.git
-cp fcs-ql/src/main/antlr4/eu/clarin/sru/fcs/qlparser/*.g4 src/fcsql/
-```
-
-(Re-)Generate python parser code:
-```bash
-# create virtual env
-python3 -m venv venv
-source venv/bin/activate
-pip install -U pip setuptools wheel
-
-# install antler tool
-python3 -m pip install antlr4-tools
-# pip install -e .[antlr]
-
-cd src/fcsql
-antlr4 -Dlanguage=Python3 *.g4
-```
-
-Build package:
-```bash
-# pip install -e .[build]
-python3 -m build
-```
-
+## Usage
 
 ## Development
 
-* Uses `pytest` (with coverage, clarity and randomly plugins).
+Fetch (or update) grammar files:
 
 ```bash
-python3 -m pip install -e .[test]
+git clone https://github.com/clarin-eric/fcs-ql.git
+cp fcs-ql/src/main/antlr4/eu/clarin/sru/fcs/qlparser/fcs/*.g4 src/fcsql/
+```
 
-pytest
+(Re-)Generate python parser code:
+
+```bash
+# setup environment
+uv sync --extra antlr
+# NOTE: you can activate the environment (if you do not want to prefix everything with `uv run`)
+# NOTE: `uv` does not play nicely with `pyenv` - if you use `pyenv`, sourcing does NOT work!
+source .venv/bin/activate
+
+cd src/fcsql
+uv run antlr4 -Dlanguage=Python3 *.g4 -listener -visitor
 ```
 
 Run style checks:
+
 ```bash
-# general style checks
-python3 -m pip install -e .[style]
+# setup environment
+uv sync --extra style
 
-black --check .
-flake8 . --show-source --statistics
-isort --check --diff .
-mypy src
+uv run black --check .
+uv run flake8 . --show-source --statistics
+uv run isort --check --diff .
 
-# building the package and check metadata
-python3 -m pip install -e .[build]
+uv run mypy src
+```
 
-python3 -m build
-twine check --strict dist/*
+Run tests (`pytest` with coverage, clarity and randomly plugins):
+
+```bash
+# setup environment
+uv sync --extra test
+
+uv run pytest
+# to see output and run a specific test file
+uv run pytest -v -rP tests/validation/test_validation.py
+```
+
+Build documentation:
+
+```bash
+# setup environment
+uv sync --extra docs
+# or if standalone
+python3 -m pip install -r ./docs/requirements.txt
 
 # build documentation and check links ...
-python3 -m pip install -e .[docs]
-
-sphinx-build -b html docs dist/docs
-sphinx-build -b linkcheck docs dist/docs
+uv run sphinx-build -b html docs dist/docs
+uv run sphinx-build -b linkcheck docs dist/docs
 ```
 
-
-## Build documentation
+Run check before publishing:
 
 ```bash
-python3 -m pip install -r ./docs/requirements.txt
-# or 
-python3 -m pip install -e .[docs]
+# setup environment
+uv sync --extra build
 
-sphinx-build -b html docs dist/docs
-sphinx-build -b linkcheck docs dist/docs
+# build the package
+uv build
+# run metadata check
+# uv run python3 -m build
+uv run twine check --strict dist/*
+# (manual) check of package contents
+tar tvf dist/fcs_ql_parser-*.tar.gz
 ```
-
 
 ## See also
 
