@@ -3,9 +3,11 @@ import unicodedata
 from abc import ABCMeta
 from abc import abstractmethod
 from collections import deque
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 from typing import Deque
+from typing import Generic
 from typing import List
 from typing import Literal
 from typing import Optional
@@ -14,31 +16,35 @@ from typing import Tuple
 from typing import Type
 from typing import TypeAlias
 from typing import TypeVar
+from typing import Union
 
 import antlr4
 import antlr4.error.ErrorListener
 from antlr4 import CommonTokenStream
 from antlr4 import InputStream
 from antlr4 import ParserRuleContext
-from antlr4 import ParseTreeWalker
+from antlr4 import Token
+from antlr4.Recognizer import Recognizer
+from antlr4.tree.Tree import TerminalNodeImpl
 
 from fcsql.FCSLexer import FCSLexer
 from fcsql.FCSParser import FCSParser
-from fcsql.FCSParserListener import FCSParserListener
+from fcsql.FCSParserVisitor import FCSParserVisitor
 
 # ---------------------------------------------------------------------------
-
 
 LOGGER = logging.getLogger(__name__)
 
 
 _T = TypeVar("_T", bound="QueryNode")
+"""Type of ``QueryNode``."""
+_R = TypeVar("_R")
+"""Result type for ``QueryVisitor``."""
 _UnicodeNormalizationForm: TypeAlias = Literal["NFC", "NFD", "NFKC", "NFKD"]
 
 
 OCCURS_UNBOUNDED = -1
 """Atom occurrence if not bound."""
-
 
 # ---------------------------------------------------------------------------
 
@@ -136,13 +142,13 @@ class SimpleWithinScope(str, Enum):
 # ---------------------------------------------------------------------------
 
 
-class QueryVisitor(metaclass=ABCMeta):
+class QueryVisitor(Generic[_R], metaclass=ABCMeta):
     """Interface implementing a Visitor pattern for FCS-QL expression trees.
 
     Default method implementations do nothing.
     """
 
-    def visit(self, node: "QueryNode") -> None:
+    def visit(self, node: "QueryNode") -> Optional[_R]:
         """Visit a query node. Generic handler, dispatches to visit methods
         based on `QueryNodeType` if exists else do nothing::
 
@@ -152,29 +158,198 @@ class QueryVisitor(metaclass=ABCMeta):
             node: the node to visit
 
         Returns:
-            ``None``
+            _R: visitation result or ``None`` (see `defaultResult()`)
         """
         if not node:
             return None
 
         def noop(node):
-            pass
+            return self.defaultResult()
 
         # search for specific visit function based on node_type
-        method = getattr(self, f"visit_{node.node_type}", noop)
+        method_name = f"visit_{node.node_type}"
+        method = getattr(self, method_name, noop)
 
-        method(node)
+        return method(node)
+
+    # ----------------------------------------------------
+    # same as antlr4.tree.Tree.ParseTreeVisitor
+
+    def visitChildren(self, node: "QueryNode") -> Optional[_R]:
+        result = self.defaultResult()
+        for i in range(node.child_count):
+            if not self.shouldVisitNextChild(node, result):
+                return result
+
+            child = node.get_child(i)
+            assert child is not None, f"child#{i} must not be None in {node=}"
+            childResult = child.accept(self)
+            result = self.aggregateResult(result, childResult)
+
+        return result
+
+    def defaultResult(self) -> Optional[_R]:
+        return None
+
+    def aggregateResult(self, aggregate: Optional[_R], nextResult: Optional[_R]) -> Optional[_R]:
+        return nextResult
+
+    def shouldVisitNextChild(self, node: "QueryNode", currentResult: Optional[_R]) -> bool:
+        return True
+
+
+class QueryVisitorAdapter(QueryVisitor[_R]):
+    """This class provides an empty implementation of ``QueryVisitor``,
+    which can be extended to create a visitor which only needs to handle
+    a subset of the available methods.
+
+    Generic with regards to the return type of the visit operation.
+    """
+
+    def visit_Expression(self, node: "Expression") -> Optional[_R]:
+        """Visit a SIMPLE expression query node.
+
+        Args:
+            node: the node to visit
+
+        Returns:
+            _R: visitation result
+        """
+        return self.visitChildren(node)
+
+    def visit_ExpressionWildcard(self, node: "ExpressionWildcard") -> Optional[_R]:
+        """Visit a WILDCARD expression query node.
+
+        Args:
+            node: the node to visit
+
+        Returns:
+            _R: visitation result
+        """
+        return self.visitChildren(node)
+
+    def visit_ExpressionGroup(self, node: "ExpressionGroup") -> Optional[_R]:
+        """Visit a GROUP expression query node.
+
+        Args:
+            node: the node to visit
+
+        Returns:
+            _R: visitation result
+        """
+        return self.visitChildren(node)
+
+    def visit_ExpressionNot(self, node: "ExpressionNot") -> Optional[_R]:
+        """Visit a NOT expression query node.
+
+        Args:
+            node: the node to visit
+
+        Returns:
+            _R: visitation result
+        """
+        return self.visitChildren(node)
+
+    def visit_ExpressionAnd(self, node: "ExpressionAnd") -> Optional[_R]:
+        """Visit a AND expression query node.
+
+        Args:
+            node: the node to visit
+
+        Returns:
+            _R: visitation result
+        """
+        return self.visitChildren(node)
+
+    def visit_ExpressionOr(self, node: "ExpressionOr") -> Optional[_R]:
+        """Visit a OR expression query node.
+
+        Args:
+            node: the node to visit
+
+        Returns:
+            _R: visitation result
+        """
+        return self.visitChildren(node)
+
+    def visit_QueryDisjunction(self, node: "QueryDisjunction") -> Optional[_R]:
+        """Visit a QR query node.
+
+        Args:
+            node: the node to visit
+
+        Returns:
+            _R: visitation result
+        """
+        return self.visitChildren(node)
+
+    def visit_QuerySequence(self, node: "QuerySequence") -> Optional[_R]:
+        """Visit a query sequence node.
+
+        Args:
+            node: the node to visit
+
+        Returns:
+            _R: visitation result
+        """
+        return self.visitChildren(node)
+
+    def visit_QueryWithWithin(self, node: "QueryWithWithin") -> Optional[_R]:
+        """Visit a QUERY-WITH-WITHIN query node.
+
+        Args:
+            node: the node to visit
+
+        Returns:
+            _R: visitation result
+        """
+        return self.visitChildren(node)
+
+    def visit_QuerySegment(self, node: "QuerySegment") -> Optional[_R]:
+        """Visit a query segment node.
+
+        Args:
+            node: the node to visit
+
+        Returns:
+            _R: visitation result
+        """
+        return self.visitChildren(node)
+
+    def visit_QueryGroup(self, node: "QueryGroup") -> Optional[_R]:
+        """Visit a GROUP query node.
+
+        Args:
+            node: the node to visit
+
+        Returns:
+            _R: visitation result
+        """
+        return self.visitChildren(node)
+
+    def visit_SimpleWithin(self, node: "SimpleWithin") -> Optional[_R]:
+        """Visit a GROUP query node.
+
+        Args:
+            node: the node to visit
+
+        Returns:
+            _R: visitation result
+        """
+        return self.visitChildren(node)
 
 
 # ---------------------------------------------------------------------------
 
 
+@dataclass(frozen=True)
 class SourceLocation:
     """Source information wrapping start and stop offsets in the query text for a query node."""
 
-    def __init__(self, start: int, stop: int):
-        self.start = start
-        self.stop = stop
+    start: int
+    """Start offset in raw query string"""
+    stop: int
+    """End offset in raw query string"""
 
     @staticmethod
     def fromContext(ctx: ParserRuleContext):
@@ -187,11 +362,26 @@ class SourceLocation:
 
         start = ctx.start.start
         stop = ctx.stop.stop + 1
-        # NOTE: stop+1 for Java string indexing
+        # NOTE: stop+1 for Java/Python string indexing
         return SourceLocation(start, stop)
 
+    @staticmethod
+    def fromToken(tok: Token):
+        if tok.start is None or tok.start == -1:
+            return None
+        if tok.stop is None or tok.stop == -1:
+            return None
 
-class QueryNode(metaclass=ABCMeta):
+        start = tok.start
+        stop = tok.stop + 1
+        # NOTE: stop+1 for Java/Python string indexing
+        return SourceLocation(start, stop)
+
+    def __str__(self):
+        return f"{self.start}:{self.stop}"
+
+
+class QueryNode(Generic[_R], metaclass=ABCMeta):
     """Base class for FCS-QL expression tree nodes."""
 
     def __init__(
@@ -228,6 +418,10 @@ class QueryNode(metaclass=ABCMeta):
 
         if child:
             self.children.append(child)
+
+        # update parents in children
+        for child in self.children:
+            child.parent = self
 
         self.location: Optional[SourceLocation] = location
         """source location information about start/stop offsets for this query node in the query text content"""
@@ -314,7 +508,7 @@ class QueryNode(metaclass=ABCMeta):
         return strrepr
 
     @abstractmethod
-    def accept(self, visitor: QueryVisitor) -> None:
+    def accept(self, visitor: QueryVisitor) -> _R:
         pass
 
 
@@ -468,6 +662,9 @@ class Expression(QueryNode):
             parts.append("I" if RegexFlag.CASE_SENSITIVE in self.regex_flags else "")
             parts.append("l" if RegexFlag.LITERAL_MATCHING in self.regex_flags else "")
             parts.append("d" if RegexFlag.IGNORE_DIACRITICS in self.regex_flags else "")
+        parts.append(")")
+        if self.location:
+            parts.append(f"@{self.location.start}:{self.location.stop}")
         return "".join(parts)
 
     def accept(self, visitor: QueryVisitor) -> None:
@@ -503,7 +700,10 @@ class ExpressionGroup(QueryNode):
         super().__init__(QueryNodeType.EXPRESSION_GROUP, child=child)
 
     def __str__(self) -> str:
-        return f"({self.node_type!s} {self.get_first_child()!s})"
+        strrepr = f"({self.node_type!s} {self.get_first_child()!s})"
+        if self.location:
+            strrepr += f"@{self.location.start}:{self.location.stop}"
+        return strrepr
 
     def accept(self, visitor: QueryVisitor) -> None:
         if self.children:
@@ -692,13 +892,15 @@ class QuerySegment(QueryNode):
         return self.children[0]
 
     def __str__(self) -> str:
-        ret = f"({self.node_type!s} "
+        strrepr = f"({self.node_type!s} "
         if self.min_occurs != 1:
-            ret += f"@min={'*' if self.min_occurs == OCCURS_UNBOUNDED else self.min_occurs} "
+            strrepr += f"@min={'*' if self.min_occurs == OCCURS_UNBOUNDED else self.min_occurs} "
         if self.max_occurs != 1:
-            ret += f"@max={'*' if self.max_occurs == OCCURS_UNBOUNDED else self.max_occurs} "
-        ret += f"{self.children[0]!s})"
-        return ret
+            strrepr += f"@max={'*' if self.max_occurs == OCCURS_UNBOUNDED else self.max_occurs} "
+        strrepr += f"{self.children[0]!s})"
+        if self.location:
+            strrepr += f"@{self.location.start}:{self.location.stop}"
+        return strrepr
 
     def accept(self, visitor: QueryVisitor) -> None:
         self.children[0].accept(visitor)
@@ -732,13 +934,15 @@ class QueryGroup(QueryNode):
         return self.children[0]
 
     def __str__(self) -> str:
-        ret = f"({self.node_type!s} "
+        strrepr = f"({self.node_type!s} "
         if self.min_occurs != 1:
-            ret += f"@min={'*' if self.min_occurs == OCCURS_UNBOUNDED else self.min_occurs} "
+            strrepr += f"@min={'*' if self.min_occurs == OCCURS_UNBOUNDED else self.min_occurs} "
         if self.max_occurs != 1:
-            ret += f"@max={'*' if self.max_occurs == OCCURS_UNBOUNDED else self.max_occurs} "
-        ret += f"{self.children[0]!s})"
-        return ret
+            strrepr += f"@max={'*' if self.max_occurs == OCCURS_UNBOUNDED else self.max_occurs} "
+        strrepr += f"{self.children[0]!s})"
+        if self.location:
+            strrepr += f"@{self.location.start}:{self.location.stop}"
+        return strrepr
 
     def accept(self, visitor: QueryVisitor) -> None:
         if self.children:
@@ -760,7 +964,10 @@ class SimpleWithin(QueryNode):
         """The simple within scope."""
 
     def __str__(self) -> str:
-        return f"({self.node_type!s} {self.scope!s})"
+        strrepr = f"({self.node_type!s} {self.scope!s})"
+        if self.location:
+            strrepr += f"@{self.location.start}:{self.location.stop}"
+        return strrepr
 
     def accept(self, visitor: QueryVisitor) -> None:
         visitor.visit(self)
@@ -788,25 +995,63 @@ See also: `unicodedata.normalize
 # ---------------------------------------------------------------------------
 
 
+@dataclass(frozen=True)
+class ErrorDetail:
+    """Wrapper for error or warnings messages to include the type of issue
+    with optional position and query string fragment."""
+
+    message: str
+    """the error or warning message"""
+    type: Optional[Union[Literal["syntax-error", "validation-error", "validation-warning"], str]] = None
+    """the type of error or warning"""
+    position: Optional[Union[int, SourceLocation]] = None
+    """optional position information in the raw query string"""
+    fragment: Optional[str] = None
+    """optional query string fragment, may be a substring to quickly locate the issue"""
+
+
 class ErrorListener(antlr4.error.ErrorListener.ErrorListener):
     def __init__(self, query: str) -> None:
         super().__init__()
         self.query = query
-        self.errors: List[str] = list()
+        self.errors: List[ErrorDetail] = list()
 
-    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+    def syntaxError(
+        self, recognizer: Recognizer, offendingSymbol: Optional[Token], line: int, column: int, msg: str, e
+    ):
         # FIXME: additional information of error should not be logged but added
         # to the list of errors; that list probably needs to be enhanced to
         # store supplementary information Furthermore, a sophisticated
         # errorlist implementation could also be used by the QueryVistor to add
         # addition query error information
+
+        pos = None
+        fragment = None
+        if isinstance(offendingSymbol, Token):
+            pos = offendingSymbol.start
+            fragment = self.query[: pos + len(offendingSymbol.text)]
+
         if LOGGER.isEnabledFor(logging.DEBUG):
-            if isinstance(offendingSymbol, antlr4.Token):
-                pos = offendingSymbol.start
-                if pos != -1:
-                    LOGGER.debug("query: %s", self.query)
-                    LOGGER.debug("       %s^- %s", " " * pos, msg)
-        self.errors.append(msg)
+            if pos is not None and pos != -1:
+                LOGGER.debug("query: %s", self.query)
+                LOGGER.debug("       %s^- %s", " " * pos, msg)
+
+            if isinstance(recognizer, FCSParser) and isinstance(offendingSymbol, Token):
+                LOGGER.debug("symbol: %s", recognizer.symbolicNames[offendingSymbol.type])
+                LOGGER.debug("literal: %s", recognizer.literalNames[offendingSymbol.type])
+                LOGGER.debug("token idx: %s", offendingSymbol.tokenIndex)
+
+        if pos is None:
+            pos = column
+
+        self.errors.append(
+            ErrorDetail(
+                message=msg,
+                type="syntax-error",
+                position=SourceLocation.fromToken(offendingSymbol) if isinstance(offendingSymbol, Token) else pos,
+                fragment=fragment,
+            )
+        )
 
     def has_errors(self) -> bool:
         return bool(self.errors)
@@ -820,365 +1065,389 @@ class ExpressionTreeBuilderException(Exception):
     """Error building expression tree."""
 
 
-class ExpressionTreeBuilder(FCSParserListener):
+class ExpressionTreeBuilder(FCSParserVisitor):
     def __init__(self, parser: "QueryParser") -> None:
         super().__init__()
         self.parser = parser
         self.stack: Deque[Any] = deque()
-        self.stack_Query_disjunction: Deque[int] = deque()
-        """for `enterQuery_disjunction`/`exitQuery_disjunction`"""
-        self.stack_Query_sequence: Deque[int] = deque()
-        """for `enterQuery_sequence`/`exitQuery_sequence`"""
-        self.stack_Expression_or: Deque[int] = deque()
-        """for `enterExpression_or`/`exitExpression_or`"""
-        self.stack_Expression_and: Deque[int] = deque()
-        """for `enterExpression_and`/`exitExpression_and`"""
 
     # ----------------------------------------------------
 
-    def enterQuery(self, ctx: FCSParser.QueryContext):
+    def visitQuery(self, ctx: FCSParser.QueryContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterQuery: children=%s / cnt=%s / text=%s",
+                "visitQuery/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
-        return super().enterQuery(ctx)
 
-    def exitQuery(self, ctx: FCSParser.QueryContext):
-        w_ctx = ctx.getChild(0, FCSParser.Within_partContext)
+        super().visitQuery(ctx)
+
+        w_ctx = ctx.within_part()
         if w_ctx is not None:
             within = self.stack.pop()
             query = self.stack.pop()
-            self.stack.append(QueryWithWithin(query, within))
+            node = QueryWithWithin(query, within)
+            if self.parser.enableSourceLocations:
+                node.location = SourceLocation.fromContext(ctx)
+            self.stack.append(node)
 
-        LOGGER.debug("exitQuery: stack=%s", self.stack)
-        return super().exitQuery(ctx)
+        LOGGER.debug("visitQuery/exit: stack=%s", self.stack)
+        return None
 
-    def enterMain_query(self, ctx: FCSParser.Main_queryContext):
+    def visitMain_query(self, ctx: FCSParser.Main_queryContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterMain_query: children=%s / cnt=%s / text=%s",
+                "visitMain_query/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
-        return super().enterMain_query(ctx)
 
-    def exitMain_query(self, ctx: FCSParser.Main_queryContext):
-        LOGGER.debug("exitMain_query: stack=%s", self.stack)
-        return super().exitMain_query(ctx)
+        super().visitMain_query(ctx)
 
-    def enterQuery_disjunction(self, ctx: FCSParser.Query_disjunctionContext):
+        LOGGER.debug("visitMain_query/exit: stack=%s", self.stack)
+        return None
+
+    def visitQuery_disjunction(self, ctx: FCSParser.Query_disjunctionContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterQuery_disjunction: children=%s / cnt=%s / text=%s",
+                "visitQuery_disjunction/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
-        self.stack_Query_disjunction.append(len(self.stack))
-        return super().enterQuery_disjunction(ctx)
 
-    def exitQuery_disjunction(self, ctx: FCSParser.Query_disjunctionContext):
-        pos = self.stack_Query_disjunction.pop()
+        pos = len(self.stack)
+
+        super().visitQuery_disjunction(ctx)
+
         if len(self.stack) > pos:
             items: List[QueryNode] = list()
             while len(self.stack) > pos:
                 items.insert(0, self.stack.pop())
-            self.stack.append(QueryDisjunction(items))
+
+            node = QueryDisjunction(items)
+            if self.parser.enableSourceLocations:
+                node.location = SourceLocation.fromContext(ctx)
+            self.stack.append(node)
         else:
-            raise ExpressionTreeBuilderException("exitQuery_disjunction is empty")
+            raise ExpressionTreeBuilderException("visitQuery_disjunction is empty")
 
-        LOGGER.debug("exitQuery_disjunction: stack=%s", self.stack)
-        return super().exitQuery_disjunction(ctx)
+        LOGGER.debug("visitQuery_disjunction/exit: stack=%s", self.stack)
+        return None
 
-    def enterQuery_sequence(self, ctx: FCSParser.Query_sequenceContext):
+    def visitQuery_sequence(self, ctx: FCSParser.Query_sequenceContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterQuery_sequence: children=%s / cnt=%s / text=%s",
+                "visitQuery_sequence/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
-        self.stack_Query_sequence.append(len(self.stack))
-        return super().enterQuery_sequence(ctx)
 
-    def exitQuery_sequence(self, ctx: FCSParser.Query_sequenceContext):
-        pos = self.stack_Query_sequence.pop()
+        pos = len(self.stack)
+
+        super().visitQuery_sequence(ctx)
+
         if len(self.stack) > pos:
             items: List[QueryNode] = list()
             while len(self.stack) > pos:
                 items.insert(0, self.stack.pop())
-            self.stack.append(QuerySequence(items))
+
+            node = QuerySequence(items)
+            if self.parser.enableSourceLocations:
+                node.location = SourceLocation.fromContext(ctx)
+            self.stack.append(node)
         else:
-            raise ExpressionTreeBuilderException("exitQuery_sequence is empty")
+            raise ExpressionTreeBuilderException("visitQuery_sequence is empty")
 
-        LOGGER.debug("exitQuery_sequence: stack=%s", self.stack)
-        return super().exitQuery_sequence(ctx)
+        LOGGER.debug("visitQuery_sequence/exit: stack=%s", self.stack)
+        return None
 
-    def enterQuery_group(self, ctx: FCSParser.Query_groupContext):
+    def visitQuery_group(self, ctx: FCSParser.Query_groupContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterQuery_group: children=%s / cnt=%s / text=%s",
+                "visitQuery_group/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
-        return super().enterQuery_group(ctx)
 
-    def exitQuery_group(self, ctx: FCSParser.Query_groupContext):
+        super().visitQuery_group(ctx)
+
         # handle repetition (if any)
         min = max = 1
 
         # fetch *first* child of type QuantifierContext, therefore idx=0
-        q_ctx = ctx.getChild(0, FCSParser.QualifierContext)
+        q_ctx = ctx.quantifier()
         if q_ctx is not None:
-            min, max = ExpressionTreeBuilder.processRepetition(ctx)
+            min, max = ExpressionTreeBuilder.processRepetition(q_ctx)
 
         content: QueryNode = self.stack.pop()
-        self.stack.append(QueryGroup(content, min, max))
+        node = QueryGroup(content, min, max)
+        if self.parser.enableSourceLocations:
+            node.location = SourceLocation.fromContext(ctx)
+        self.stack.append(node)
 
-        LOGGER.debug("exitQuery_group: stack=%s", self.stack)
-        return super().exitQuery_group(ctx)
+        LOGGER.debug("visitQuery_group/exit: stack=%s", self.stack)
+        return None
 
-    def enterQuery_simple(self, ctx: FCSParser.Query_simpleContext):
+    def visitQuery_simple(self, ctx: FCSParser.Query_simpleContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterQuery_simple: children=%s / cnt=%s / text=%s",
+                "visitQuery_simple/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
-        return super().enterQuery_simple(ctx)
 
-    def exitQuery_simple(self, ctx: FCSParser.Query_simpleContext):
+        super().visitQuery_simple(ctx)
+
         # handle repetition (if any)
         min = max = 1
 
         # fetch *first* child of type QuantifierContext, therefore idx=0
-        q_ctx = ctx.getChild(0, FCSParser.QualifierContext)
+        q_ctx = ctx.quantifier()
         if q_ctx is not None:
-            min, max = ExpressionTreeBuilder.processRepetition(ctx)
+            min, max = ExpressionTreeBuilder.processRepetition(q_ctx)
 
         expression: QueryNode = self.stack.pop()
-        self.stack.append(QuerySegment(expression, min, max))
+        node = QuerySegment(expression, min, max)
+        if self.parser.enableSourceLocations:
+            node.location = SourceLocation.fromContext(ctx)
+        self.stack.append(node)
 
-        LOGGER.debug("exitQuery_simple: stack=%s", self.stack)
-        return super().exitQuery_simple(ctx)
+        LOGGER.debug("visitQuery_simple/exit: stack=%s", self.stack)
+        return None
 
-    def enterQuery_implicit(self, ctx: FCSParser.Query_implicitContext):
+    def visitQuery_implicit(self, ctx: FCSParser.Query_implicitContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterQuery_implicit: children=%s / cnt=%s / text=%s",
+                "visitQuery_implicit/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
+
         self.stack.append(self.parser.default_operator)
         self.stack.append(self.parser.default_identifier)
         self.stack.append(EMPTY_STRING)
-        return super().enterQuery_implicit(ctx)
 
-    def exitQuery_implicit(self, ctx: FCSParser.Query_implicitContext):
+        super().visitQuery_implicit(ctx)
+
         regex_flags: Set[RegexFlag] = self.stack.pop()
         regex_value: str = self.stack.pop()
         qualifier: str = self.stack.pop()
         identifier: str = self.stack.pop()
         operator: Operator = self.stack.pop()
 
-        self.stack.append(
-            Expression(
-                qualifier=qualifier,
-                identifier=identifier,
-                operator=operator,
-                regex=regex_value,
-                regex_flags=regex_flags,
-            )
+        node = Expression(
+            qualifier=qualifier,
+            identifier=identifier,
+            operator=operator,
+            regex=regex_value,
+            regex_flags=regex_flags,
         )
+        if self.parser.enableSourceLocations:
+            node.location = SourceLocation.fromContext(ctx)
+        self.stack.append(node)
 
-        LOGGER.debug("exitQuery_implicit: stack=%s", self.stack)
-        return super().exitQuery_implicit(ctx)
+        LOGGER.debug("visitQuery_implicit/exit: stack=%s", self.stack)
+        return None
 
-    # TODO: check, abortable, if also exit?
-    def enterQuery_segment(self, ctx: FCSParser.Query_segmentContext):
+    def visitQuery_segment(self, ctx: FCSParser.Query_segmentContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterQuery_segment: children=%s / cnt=%s / text=%s",
+                "visitQuery_segment/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
+
         # if the context contains only two children, they must be
         # '[' and ']' thus we are dealing with a wildcard segment
         if ctx.getChildCount() == 2:
-            self.stack.append(ExpressionWildcard())
+            node = ExpressionWildcard()
+            if self.parser.enableSourceLocations:
+                node.location = SourceLocation.fromContext(ctx)
+            self.stack.append(node)
 
-        # TODO: not exactly matching the java implementation
-        # do we need to block 'visitQuery_segment' call?
+        else:
+            super().visitQuery_segment(ctx)
 
-        return super().enterQuery_segment(ctx)
+        LOGGER.debug("visitQuery_segment/exit: stack=%s", self.stack)
+        return None
 
-    def exitQuery_segment(self, ctx: FCSParser.Query_segmentContext):
-        LOGGER.debug("exitQuery_segment: stack=%s", self.stack)
-        return super().exitQuery_segment(ctx)
-
-    def enterExpression_basic(self, ctx: FCSParser.Expression_basicContext):
+    def visitExpression_basic(self, ctx: FCSParser.Expression_basicContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterExpression_basic: children=%s / cnt=%s / text=%s",
+                "visitExpression_basic/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
 
-        tok_op = ctx.getChild(1).symbol
-        if tok_op.type == FCSLexer.OPERATOR_EQ:
+        if ctx.OPERATOR_EQ() is not None:
             self.stack.append(Operator.EQUALS)
-        elif tok_op.type == FCSLexer.OPERATOR_NE:
+        elif ctx.OPERATOR_NE() is not None:
             self.stack.append(Operator.NOT_EQUALS)
         else:
-            raise ExpressionTreeBuilderException(f"invalid operator type: {tok_op.text}")
+            tok_ok = ctx.getChild(0)
+            tok_ok_text = tok_ok.text if tok_ok else tok_ok
+            raise ExpressionTreeBuilderException(f"invalid operator type: {tok_ok_text}")
 
-        return super().enterExpression_basic(ctx)
+        super().visitExpression_basic(ctx)
 
-    def exitExpression_basic(self, ctx: FCSParser.Expression_basicContext):
         regex_flags: Set[RegexFlag] = self.stack.pop()
         regex_value: str = self.stack.pop()
         qualifier: str = self.stack.pop()
         identifier: str = self.stack.pop()
         operator: Operator = self.stack.pop()
 
-        self.stack.append(
-            Expression(
-                qualifier=qualifier,
-                identifier=identifier,
-                operator=operator,
-                regex=regex_value,
-                regex_flags=regex_flags,
-            )
+        node = Expression(
+            qualifier=qualifier,
+            identifier=identifier,
+            operator=operator,
+            regex=regex_value,
+            regex_flags=regex_flags,
         )
+        if self.parser.enableSourceLocations:
+            node.location = SourceLocation.fromContext(ctx)
+        self.stack.append(node)
 
-        LOGGER.debug("exitExpression_basic: stack=%s", self.stack)
-        return super().exitExpression_basic(ctx)
+        LOGGER.debug("visitExpression_basic/exit: stack=%s", self.stack)
+        return None
 
-    def enterExpression_not(self, ctx: FCSParser.Expression_notContext):
+    def visitExpression_not(self, ctx: FCSParser.Expression_notContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterExpression_not: children=%s / cnt=%s / text=%s",
+                "visitExpression_not/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
-        return super().enterExpression_not(ctx)
 
-    def exitExpression_not(self, ctx: FCSParser.Expression_notContext):
+        super().visitExpression_not(ctx)
+
         expression: QueryNode = self.stack.pop()
-        self.stack.append(ExpressionNot(expression))
+        node = ExpressionNot(expression)
+        if self.parser.enableSourceLocations:
+            node.location = SourceLocation.fromContext(ctx)
+        self.stack.append(node)
 
-        LOGGER.debug("exitExpression_not: stack=%s", self.stack)
-        return super().exitExpression_not(ctx)
+        LOGGER.debug("visitExpression_not/exit: stack=%s", self.stack)
+        return None
 
-    def enterExpression_group(self, ctx: FCSParser.Expression_groupContext):
+    def visitExpression_group(self, ctx: FCSParser.Expression_groupContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterExpression_group: children=%s / cnt=%s / text=%s",
+                "visitExpression_group/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
-        return super().enterExpression_group(ctx)
 
-    def exitExpression_group(self, ctx: FCSParser.Expression_groupContext):
+        super().visitExpression_group(ctx)
+
         expression: QueryNode = self.stack.pop()
-        self.stack.append(ExpressionGroup(expression))
+        node = ExpressionGroup(expression)
+        if self.parser.enableSourceLocations:
+            node.location = SourceLocation.fromContext(ctx)
+        self.stack.append(node)
 
-        LOGGER.debug("exitExpression_group: stack=%s", self.stack)
-        return super().exitExpression_group(ctx)
+        LOGGER.debug("visitExpression_group/exit: stack=%s", self.stack)
+        return None
 
-    def enterExpression_or(self, ctx: FCSParser.Expression_orContext):
+    def visitExpression_or(self, ctx: FCSParser.Expression_orContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterExpression_or: children=%s / cnt=%s / text=%s",
+                "visitExpression_or/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
-        self.stack_Expression_or.append(len(self.stack))
-        return super().enterExpression_or(ctx)
 
-    def exitExpression_or(self, ctx: FCSParser.Expression_orContext):
-        pos = self.stack_Expression_or.pop()
+        pos = len(self.stack)
+
+        super().visitExpression_or(ctx)
+
         if len(self.stack) > pos:
             children: List[QueryNode] = list()
             while len(self.stack) > pos:
                 children.insert(0, self.stack.pop())
-            self.stack.append(ExpressionOr(children))
+
+            node = ExpressionOr(children)
+            if self.parser.enableSourceLocations:
+                node.location = SourceLocation.fromContext(ctx)
+            self.stack.append(node)
         else:
-            raise ExpressionTreeBuilderException("exitExpression_or is empty")
+            raise ExpressionTreeBuilderException("visitExpression_or is empty")
 
-        LOGGER.debug("exitExpression_or: stack=%s", self.stack)
-        return super().exitExpression_or(ctx)
+        LOGGER.debug("visitExpression_or/exit: stack=%s", self.stack)
+        return None
 
-    def enterExpression_and(self, ctx: FCSParser.Expression_andContext):
+    def visitExpression_and(self, ctx: FCSParser.Expression_andContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterExpression_and: children=%s / cnt=%s / text=%s",
+                "visitExpression_and/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
-        self.stack_Expression_and.append(len(self.stack))
-        return super().enterExpression_and(ctx)
 
-    def exitExpression_and(self, ctx: FCSParser.Expression_andContext):
-        pos = self.stack_Expression_and.pop()
+        pos = len(self.stack)
+
+        super().visitExpression_and(ctx)
+
         if len(self.stack) > pos:
             children: List[QueryNode] = list()
             while len(self.stack) > pos:
                 children.insert(0, self.stack.pop())
-            self.stack.append(ExpressionAnd(children))
+
+            node = ExpressionAnd(children)
+            if self.parser.enableSourceLocations:
+                node.location = SourceLocation.fromContext(ctx)
+            self.stack.append(node)
         else:
-            raise ExpressionTreeBuilderException("exitExpression_and is empty")
+            raise ExpressionTreeBuilderException("visitExpression_and is empty")
 
-        LOGGER.debug("exitExpression_and: stack=%s", self.stack)
-        return super().exitExpression_and(ctx)
+        LOGGER.debug("visitExpression_and/exit: stack=%s", self.stack)
+        return None
 
-    # TODO: check, or exit
-    def enterAttribute(self, ctx: FCSParser.AttributeContext):
+    def visitAttribute(self, ctx: FCSParser.AttributeContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterAttribute: children=%s / cnt=%s / text=%s",
+                "visitAttribute/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
 
         # handle optional qualifier
-        q_ctx = ctx.getChild(0, FCSParser.QualifierContext)
+        q_ctx = ctx.qualifier()
         qualifier = q_ctx.getText() if q_ctx is not None else EMPTY_STRING
 
-        self.stack.append(ctx.getChild(0, FCSParser.IdentifierContext).getText())
+        i_ctx = ctx.identifier()
+        assert i_ctx, f"ctx.identifier() must not be None in {ctx=}"
+        self.stack.append(i_ctx.getText())
         self.stack.append(qualifier)
 
-        return super().enterAttribute(ctx)
+        LOGGER.debug("visitAttribute/exit: stack=%s", self.stack)
+        return None
 
-    def exitAttribute(self, ctx: FCSParser.AttributeContext):
-        LOGGER.debug("exitAttribute: stack=%s", self.stack)
-        return super().exitAttribute(ctx)
-
-    # TODO: check, or exit
-    def enterRegexp(self, ctx: FCSParser.RegexpContext):
+    def visitRegexp(self, ctx: FCSParser.RegexpContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterRegexp: children=%s / cnt=%s / text=%s",
+                "visitRegexp/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
 
-        p_ctx = ctx.getChild(0, FCSParser.Regexp_patternContext)
+        p_ctx = ctx.regexp_pattern()
+        assert p_ctx is not None, f"ctx.regexp_pattern() must not be None in {ctx=}"
         regex = ExpressionTreeBuilder.stripQuotes(p_ctx.getText())
 
         # process escape sequences, if present
@@ -1193,7 +1462,7 @@ class ExpressionTreeBuilder(FCSParserListener):
         self.stack.append(regex)
 
         # handle regex flags, if any
-        f_ctx = ctx.getChild(0, FCSParser.Regexp_flagContext)
+        f_ctx = ctx.regexp_flag()
         if f_ctx:
             val = f_ctx.getText()
             flags: Set[RegexFlag] = set()
@@ -1211,7 +1480,7 @@ class ExpressionTreeBuilder(FCSParserListener):
                     raise ExpressionTreeBuilderException(f"unknown regex modifier flag: {flag}")
 
             # validate regex flags
-            if RegexFlag.CASE_SENSITIVE in flags and RegexFlag.CASE_INSENSITIVE in RegexFlag.CASE_SENSITIVE:
+            if RegexFlag.CASE_SENSITIVE in flags and RegexFlag.CASE_INSENSITIVE in flags:
                 raise ExpressionTreeBuilderException(
                     "invalid combination of regex modifier flags: " "'i' or 'c' and 'I' or 'C' are mutually exclusive"
                 )
@@ -1234,24 +1503,22 @@ class ExpressionTreeBuilder(FCSParserListener):
             # regex without flags, so push 'empty' flags on stack
             self.stack.append(set())
 
-        return super().enterRegexp(ctx)
+        LOGGER.debug("visitRegexp/exit: stack=%s", self.stack)
+        return None
 
-    def exitRegexp(self, ctx: FCSParser.RegexpContext):
-        LOGGER.debug("exitRegexp: stack=%s", self.stack)
-        return super().exitRegexp(ctx)
-
-    # TODO: check, abortable, if also exit?
-    def enterWithin_part_simple(self, ctx: FCSParser.Within_part_simpleContext):
+    def visitWithin_part_simple(self, ctx: FCSParser.Within_part_simpleContext):
         if LOGGER.isEnabledFor(logging.DEBUG):
             LOGGER.debug(
-                "enterWithin_part_simple: children=%s / cnt=%s / text=%s",
+                "visitWithin_part_simple/enter: children=%s / cnt=%s / text=%s",
                 ctx.children,
                 ctx.getChildCount(),
                 ctx.getText(),
             )
 
         scope: SimpleWithinScope
-        val = ctx.getChild(0).getText()
+        c_ctx = ctx.getChild(0)
+        assert c_ctx is not None, f"ctx.getChild(0) must not be None in {ctx=}"
+        val = c_ctx.getText()
         if val in ("sentence", "s"):
             scope = SimpleWithinScope.SENTENCE
         elif val in ("utterance", "u"):
@@ -1267,28 +1534,31 @@ class ExpressionTreeBuilder(FCSParserListener):
         else:
             raise ExpressionTreeBuilderException(f"invalid scope for simple 'within' clause: {val}")
 
-        self.stack.append(SimpleWithin(scope))
+        node = SimpleWithin(scope)
+        if self.parser.enableSourceLocations:
+            node.location = SourceLocation.fromContext(ctx)
+        self.stack.append(node)
 
-        return super().enterWithin_part_simple(ctx)
-
-    def exitWithin_part_simple(self, ctx: FCSParser.Within_part_simpleContext):
-        LOGGER.debug("exitWithin_part_simple: stack=%s", self.stack)
-        return super().exitWithin_part_simple(ctx)
+        LOGGER.debug("visitWithin_part_simple/exit: stack=%s", self.stack)
+        return None
 
     # ----------------------------------------------------
 
     @staticmethod
-    def processRepetition(ctx: FCSParser.QualifierContext) -> Tuple[int, int]:
-        tok: antlr4.Token = ctx.getChild(0, antlr4.TerminalNode).symbol
-        if tok.type == FCSParser.Q_ZERO_OR_MORE:  # "*"
+    def processRepetition(ctx: FCSParser.QuantifierContext) -> Tuple[int, int]:
+        if ctx.Q_ZERO_OR_MORE() is not None:  # "*"
             return REP_ZERO_OR_MORE
-        if tok.type == FCSParser.Q_ONE_OR_MORE:  # "+"
+        if ctx.Q_ONE_OR_MORE() is not None:  # "+"
             return REP_ONE_OR_MORE
-        if tok.type == FCSParser.Q_ZERO_OR_ONE:  # "?"
+        if ctx.Q_ZERO_OR_ONE() is not None:  # "?"
             return REP_ZERO_OR_ONE
-        if tok.type == FCSParser.L_CURLY_BRACKET:  # "{x, y}" variants
+        if ctx.L_CURLY_BRACKET() is not None:  # "{x, y}" variants
             return ExpressionTreeBuilder.processRepetitionRange(ctx)
-        raise ExpressionTreeBuilderException(f"unexpected symbol in repetition quantifier: {tok.text}")
+
+        tn: TerminalNodeImpl = ctx.getChild(0, antlr4.TerminalNode)  # type: ignore
+        tok = tn.symbol if tn else None
+        tok_text = tok if tok else "?"
+        raise ExpressionTreeBuilderException(f"unexpected symbol in repetition quantifier: {tok_text}")
 
     @staticmethod
     def processRepetitionRange(ctx: FCSParser.QuantifierContext) -> Tuple[int, int]:
@@ -1299,15 +1569,15 @@ class ExpressionTreeBuilder(FCSParserListener):
         max = OCCURS_UNBOUNDED
         if comma_idx != -1:
             if int1_idx < comma_idx:
-                min = ExpressionTreeBuilder.parseInt(ctx.getChild(int1_idx).getText())
+                min = ExpressionTreeBuilder.parseInt(ctx.getChild(int1_idx).getText())  # type: ignore
             if comma_idx < int1_idx:
-                max = ExpressionTreeBuilder.parseInt(ctx.getChild(int1_idx).getText())
+                max = ExpressionTreeBuilder.parseInt(ctx.getChild(int1_idx).getText())  # type: ignore
             elif comma_idx < int2_idx:
-                max = ExpressionTreeBuilder.parseInt(ctx.getChild(int2_idx).getText())
+                max = ExpressionTreeBuilder.parseInt(ctx.getChild(int2_idx).getText())  # type: ignore
         else:
             if int1_idx == -1:
                 raise ExpressionTreeBuilderException("int1_idx == -1")
-            min = max = ExpressionTreeBuilder.parseInt(ctx.getChild(int1_idx).getText())
+            min = max = ExpressionTreeBuilder.parseInt(ctx.getChild(int1_idx).getText())  # type: ignore
         if max != OCCURS_UNBOUNDED and min > max:
             raise ExpressionTreeBuilderException(f"bad qualifier: min > max ({min} > {max})")
         return (min, max)
@@ -1443,6 +1713,7 @@ class QueryParser:
 
     def __init__(
         self,
+        *,
         default_identifier: str = DEFAULT_IDENTIFIER,
         default_operator: Operator = DEFAULT_OPERATOR,
         unicode_normalization_form: Optional[_UnicodeNormalizationForm] = DEFAULT_UNICODE_NORMALIZATION_FORM,
@@ -1459,8 +1730,12 @@ class QueryParser:
         self.default_identifier = default_identifier
         self.default_operator = default_operator
         self.unicode_normalization_form = unicode_normalization_form
+
         self.enableSourceLocations = enableSourceLocations
         """Whether source locations are computed for each query node."""
+
+        self.errors: List[ErrorDetail] = list()
+        """List of errors when parsing fails."""
 
     def parse(self, query: str) -> QueryNode:
         """Parse query.
@@ -1497,22 +1772,26 @@ class QueryParser:
 
                 # now build the expression tree
                 builder = ExpressionTreeBuilder(self)
-                walker = ParseTreeWalker()
-                walker.walk(builder, tree)
-                return builder.stack.pop()
+                builder.visit(tree)
+                node: QueryNode = builder.stack.pop()
+                return node
             else:
                 if LOGGER.isEnabledFor(logging.DEBUG):
                     for msg in error_listener.errors:
                         LOGGER.debug("ERROR: %s", msg)
 
-                # FIXME: (include additional error information)
-                raise QueryParserException((error_listener.errors or ["unspecified error"])[0])
+                # FIXME: include additional error information?
+                first_message = error_listener.errors[0].message if error_listener.errors else "?"
+                raise QueryParserException(f"unable to parse query: {first_message}")
         except ExpressionTreeBuilderException as ex:
             raise QueryParserException(str(ex)) from ex
         except QueryParserException:
             raise
         except Exception as ex:
             raise QueryParserException("an unexpected exception occured while parsing") from ex
+        finally:
+            # update list of errors
+            self.errors = error_listener.errors
 
 
 # ---------------------------------------------------------------------------

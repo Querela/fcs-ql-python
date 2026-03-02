@@ -459,7 +459,7 @@ wheels = [
 
 [[package]]
 name = "fcs-ql-parser"
-version = "1.1.0"
+version = "1.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "antlr4-python3-runtime" },
@@ -485,6 +485,7 @@ style = [
     { name = "flake8" },
     { name = "isort" },
     { name = "mypy" },
+    { name = "types-antlr4-python3-runtime" },
 ]
 test = [
     { name = "pytest" },
@@ -509,6 +510,7 @@ requires-dist = [
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=8.1.3" },
     { name = "sphinx-rtd-theme", marker = "extra == 'docs'", specifier = ">=3.1.0" },
     { name = "twine", marker = "extra == 'build'", specifier = ">=6.2.0" },
+    { name = "types-antlr4-python3-runtime", marker = "extra == 'style'", specifier = ">=4.13.0.20251118" },
 ]
 provides-extras = ["antlr", "test", "style", "build", "docs"]
 
@@ -1636,6 +1638,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e0/a8/949edebe3a82774c1ec34f637f5dd82d1cf22c25e963b7d63771083bbee5/twine-6.2.0.tar.gz", hash = "sha256:e5ed0d2fd70c9959770dce51c8f39c8945c574e18173a7b81802dab51b4b75cf", size = 172262, upload-time = "2025-09-04T15:43:17.255Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3a/7a/882d99539b19b1490cac5d77c67338d126e4122c8276bf640e411650c830/twine-6.2.0-py3-none-any.whl", hash = "sha256:418ebf08ccda9a8caaebe414433b0ba5e25eb5e4a927667122fbe8f829f985d8", size = 42727, upload-time = "2025-09-04T15:43:15.994Z" },
+]
+
+[[package]]
+name = "types-antlr4-python3-runtime"
+version = "4.13.0.20251118"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d1/33/b8c708fb68bbdccedafb4917153bb962b8fc6c0bc6257fabe53576dd6323/types_antlr4_python3_runtime-4.13.0.20251118.tar.gz", hash = "sha256:24921dfd652f33fb167986770de460f88af7e6c42eeee9a2b402e87b170bebdd", size = 25373, upload-time = "2025-11-18T03:05:07.521Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/59/ba/5e185dc73ab7de348dda2cc8cc796abcb4856f194913d0b5cb51b31ffeef/types_antlr4_python3_runtime-4.13.0.20251118-py3-none-any.whl", hash = "sha256:f9acfc4d7d9eec50cf4e64f4e268e238dc6998cda1b50beb4a0c933fbdbdc836", size = 41426, upload-time = "2025-11-18T03:05:06.23Z" },
 ]
 
 [[package]]

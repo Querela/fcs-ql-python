@@ -46,6 +46,41 @@ python3 -m pip install -e .
 
 ## Usage
 
+The high-level interface `fcsql.parser.QueryParser` wraps the ANTLR4 parse tree into a simplified query node tree that is easier to work with. The `fcsql-parser` exposes a simple parsing function with `fcsql.parse(input: str, enableSourceLocations: bool = True) -> fcsql.parser.QueryNode`:
+
+```python
+import fcsql
+
+## parsing a valid query into a query node tree
+# our query input string
+input = '[ pos = "NOUN" ]'
+# parse into QueryNode tree
+sc = fcsql.parse(input)
+# print stringified tree
+print(str(sc))
+
+## handling possibly invalid queries
+input = "[ kaputt ]"
+try:
+    fcsql.parse(input)
+except fcsql.QueryParserException as ex:
+    print(f"Error: {ex}")
+```
+
+You can also use the more low-level ANTLR4 framework to parse the query string. A handy wrapper is provided with `fcsql.antlr_parse(input: str) -> LexParser.QueryContext`.
+
+```python
+from antlr4 import CommonTokenStream, InputStream
+from fcsql.parser import FCSLexer, FCSParser
+
+input = '"test"'
+input_stream = InputStream(input)
+lexer = FCSLexer(input_stream)
+stream = CommonTokenStream(lexer)
+parser = FCSParser(stream)
+tree: FCSParser.QueryContext = parser.query()
+```
+
 ## Development
 
 Fetch (or update) grammar files:

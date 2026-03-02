@@ -1,6 +1,6 @@
 [project]
 name = "fcs-ql-parser"
-version = "1.1.0"
+version = "1.2.0"
 description = "FCS-QL (CLARIN-FCS Core 2.0 Query Language) Grammar and Parser"
 readme = "README.md"
 license = "MIT"
@@ -53,6 +53,7 @@ style = [
     "flake8>=7.3.0",
     "isort>=8.0.0",
     "mypy>=1.19.1",
+    "types-antlr4-python3-runtime>=4.13.0.20251118",
 ]
 build = [
     "twine>=6.2.0",
