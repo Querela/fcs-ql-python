@@ -81,6 +81,46 @@ parser = FCSParser(stream)
 tree: FCSParser.QueryContext = parser.query()
 ```
 
+Parsed queries can also be checked against their specification conformance.
+
+```python
+from fcsql import QueryParser
+from fcsql.validation import FCSQLValidator, SpecificationValidationError
+
+parser = QueryParser(enableSourceLocations=True)
+
+query = '"Banane"'
+node = parser.parse(query)
+validator = FCSQLValidator()
+validator.validate(node, query=query)
+len(validator.errors) == 0  # no errors
+
+# or to raise an error on first violation
+query = '[ post = "NOUN" ]'
+node = parser.parse(query)
+validator = FCSQLValidator(raise_at_first_violation=True)
+validator.validate(node, query=query)  # raises SpecificationValidationError
+```
+
+A convenience method is provded with `fcsql.validate(query: str)`:
+
+```python
+from fcsql import validate
+
+# simple boolean returns
+validate("'apples'")  # => True
+validate("apples")  # => False (parse error, invalid construct, not a simple string or token)
+validate('[ pos = "NOUNT" ]{3,0}')  # => False (repetition max must be >= min)
+
+# or with list of errors
+error = validate("pos = NOUN", return_errors=True)[0]  # has one error
+error.message         # "mismatched input 'pos' expecting {'(', '[', REGEXP}"
+error.type            # "syntax-error"
+error.fragment        # "pos"
+error.position.start  # 0 (start offset in query string)
+error.position.stop   # 3 (  end offset in query string)
+```
+
 ## Development
 
 Fetch (or update) grammar files:
@@ -109,9 +149,9 @@ Run style checks:
 # setup environment
 uv sync --extra style
 
+uv run isort --check --diff .
 uv run black --check .
 uv run flake8 . --show-source --statistics
-uv run isort --check --diff .
 
 uv run mypy src
 ```
@@ -125,6 +165,8 @@ uv sync --extra test
 uv run pytest
 # to see output and run a specific test file
 uv run pytest -v -rP tests/validation/test_validation.py
+# with logs
+uv run pytest -v -rP -o log_cli=true -o log_cli_level="DEBUG"
 ```
 
 Build documentation:

@@ -1,7 +1,6 @@
 import logging
 import unicodedata
 from abc import ABCMeta
-from abc import abstractmethod
 from collections import deque
 from dataclasses import dataclass
 from enum import Enum
@@ -158,17 +157,17 @@ class QueryVisitor(Generic[_R], metaclass=ABCMeta):
             node: the node to visit
 
         Returns:
-            _R: visitation result or ``None`` (see `defaultResult()`)
+            Optional[_R]: visitation result or ``None`` (see `defaultResult()`)
         """
         if not node:
             return None
 
-        def noop(node):
-            return self.defaultResult()
-
         # search for specific visit function based on node_type
         method_name = f"visit_{node.node_type}"
-        method = getattr(self, method_name, noop)
+        method = getattr(self, method_name, self.visitChildren)
+
+        if LOGGER.isEnabledFor(logging.DEBUG):
+            LOGGER.debug("visiting '%s()': %s", method.__name__, node)
 
         return method(node)
 
@@ -507,9 +506,8 @@ class QueryNode(Generic[_R], metaclass=ABCMeta):
             strrepr += f"@{self.location.start}:{self.location.stop}"
         return strrepr
 
-    @abstractmethod
     def accept(self, visitor: QueryVisitor) -> _R:
-        pass
+        return visitor.visit(self)
 
 
 # ---------------------------------------------------------------------------
@@ -667,9 +665,6 @@ class Expression(QueryNode):
             parts.append(f"@{self.location.start}:{self.location.stop}")
         return "".join(parts)
 
-    def accept(self, visitor: QueryVisitor) -> None:
-        visitor.visit(self)
-
 
 # ---------------------------------------------------------------------------
 
@@ -683,9 +678,6 @@ class ExpressionWildcard(QueryNode):
         child: Optional["QueryNode"] = None,
     ):
         super().__init__(QueryNodeType.EXPRESSION_WILDCARD, children=children, child=child)
-
-    def accept(self, visitor: QueryVisitor) -> None:
-        visitor.visit(self)
 
 
 class ExpressionGroup(QueryNode):
@@ -705,13 +697,6 @@ class ExpressionGroup(QueryNode):
             strrepr += f"@{self.location.start}:{self.location.stop}"
         return strrepr
 
-    def accept(self, visitor: QueryVisitor) -> None:
-        if self.children:
-            # for child in self.children:
-            #     child.accept(visitor)
-            self.children[0].accept(visitor)
-        visitor.visit(self)
-
 
 class ExpressionNot(QueryNode):
     """A FCS-QL expression tree NOT expression node."""
@@ -725,14 +710,10 @@ class ExpressionNot(QueryNode):
         super().__init__(QueryNodeType.EXPRESSION_NOT, child=child)
 
     def __str__(self) -> str:
-        return f"({self.node_type!s} {self.get_first_child()!s})"
-
-    def accept(self, visitor: QueryVisitor) -> None:
-        if self.children:
-            # for child in self.children:
-            #     child.accept(visitor)
-            self.children[0].accept(visitor)
-        visitor.visit(self)
+        strrepr = f"({self.node_type!s} {self.get_first_child()!s})"
+        if self.location:
+            strrepr += f"@{self.location.start}:{self.location.stop}"
+        return strrepr
 
 
 class ExpressionAnd(QueryNode):
@@ -755,12 +736,6 @@ class ExpressionAnd(QueryNode):
         """
         return self.children
 
-    def accept(self, visitor: QueryVisitor) -> None:
-        if self.children:
-            for child in self.children:
-                child.accept(visitor)
-        visitor.visit(self)
-
 
 class ExpressionOr(QueryNode):
     """A FCS-QL expression tree OR expression node."""
@@ -782,12 +757,6 @@ class ExpressionOr(QueryNode):
         """
         return self.children
 
-    def accept(self, visitor: QueryVisitor) -> None:
-        if self.children:
-            for child in self.children:
-                child.accept(visitor)
-        visitor.visit(self)
-
 
 # ---------------------------------------------------------------------------
 
@@ -803,12 +772,6 @@ class QueryDisjunction(QueryNode):
         """
         super().__init__(QueryNodeType.QUERY_DISJUNCTION, children=children)
 
-    def accept(self, visitor: QueryVisitor) -> None:
-        if self.children:
-            for child in self.children:
-                child.accept(visitor)
-        visitor.visit(self)
-
 
 class QuerySequence(QueryNode):
     """A FCS-QL expression tree query sequence node."""
@@ -820,12 +783,6 @@ class QuerySequence(QueryNode):
             children: the children for this node
         """
         super().__init__(QueryNodeType.QUERY_SEQUENCE, children=children)
-
-    def accept(self, visitor: QueryVisitor) -> None:
-        if self.children:
-            for child in self.children:
-                child.accept(visitor)
-        visitor.visit(self)
 
 
 class QueryWithWithin(QueryNode):
@@ -856,13 +813,6 @@ class QueryWithWithin(QueryNode):
             QueryNode: the witin clause
         """
         return self.get_child(1)
-
-    def accept(self, visitor: QueryVisitor) -> None:
-        self.children[0].accept(visitor)
-        within = self.get_child(1)
-        if within:
-            within.accept(visitor)
-        visitor.visit(self)
 
 
 class QuerySegment(QueryNode):
@@ -902,10 +852,6 @@ class QuerySegment(QueryNode):
             strrepr += f"@{self.location.start}:{self.location.stop}"
         return strrepr
 
-    def accept(self, visitor: QueryVisitor) -> None:
-        self.children[0].accept(visitor)
-        visitor.visit(self)
-
 
 class QueryGroup(QueryNode):
     """A FCS-QL expression tree GROUP query node."""
@@ -944,12 +890,6 @@ class QueryGroup(QueryNode):
             strrepr += f"@{self.location.start}:{self.location.stop}"
         return strrepr
 
-    def accept(self, visitor: QueryVisitor) -> None:
-        if self.children:
-            for child in self.children:
-                child.accept(visitor)
-        visitor.visit(self)
-
 
 # ---------------------------------------------------------------------------
 
@@ -968,9 +908,6 @@ class SimpleWithin(QueryNode):
         if self.location:
             strrepr += f"@{self.location.start}:{self.location.stop}"
         return strrepr
-
-    def accept(self, visitor: QueryVisitor) -> None:
-        visitor.visit(self)
 
 
 # ---------------------------------------------------------------------------
@@ -1036,10 +973,12 @@ class ErrorListener(antlr4.error.ErrorListener.ErrorListener):
                 LOGGER.debug("query: %s", self.query)
                 LOGGER.debug("       %s^- %s", " " * pos, msg)
 
-            if isinstance(recognizer, FCSParser) and isinstance(offendingSymbol, Token):
-                LOGGER.debug("symbol: %s", recognizer.symbolicNames[offendingSymbol.type])
-                LOGGER.debug("literal: %s", recognizer.literalNames[offendingSymbol.type])
-                LOGGER.debug("token idx: %s", offendingSymbol.tokenIndex)
+            if isinstance(offendingSymbol, Token):
+                lit_name, sym_name = self._get_token_name(recognizer, offendingSymbol)
+                LOGGER.debug(
+                    f"symbol: literal={lit_name!r} symbol={sym_name!r} @token-idx={offendingSymbol.tokenIndex}"
+                )
+                LOGGER.debug(f"{recognizer=}")
 
         if pos is None:
             pos = column
@@ -1052,6 +991,27 @@ class ErrorListener(antlr4.error.ErrorListener.ErrorListener):
                 fragment=fragment,
             )
         )
+
+    @staticmethod
+    def _get_token_name(recognizer: Recognizer, symbol: Optional[Token]):
+        if not symbol:
+            return (None, None)
+        if not isinstance(recognizer, (FCSLexer, FCSParser)):
+            return (None, None)
+        if not hasattr(recognizer, "literalNames"):
+            return (None, None)
+        if not hasattr(recognizer, "symbolicNames"):
+            return (None, None)
+
+        type = symbol.type
+        lit_name = sym_name = None
+
+        if type < len(recognizer.literalNames):
+            lit_name = recognizer.literalNames[type]
+        if type < len(recognizer.symbolicNames):
+            sym_name = recognizer.symbolicNames[type]
+
+        return (lit_name, sym_name)
 
     def has_errors(self) -> bool:
         return bool(self.errors)
@@ -1740,14 +1700,16 @@ class QueryParser:
     def parse(self, query: str) -> QueryNode:
         """Parse query.
 
+        Populates the ``.errors`` attribute with any errors found (if an exception was raised).
+
         Args:
             query: the raw FCS-QL query
 
-        Raises:
-            QueryParserException: if an error occurred
-
         Returns:
             QueryNode: a FCS-QL expression tree
+
+        Raises:
+            QueryParserException: if an error occurred
         """
         error_listener = ErrorListener(query)
         try:

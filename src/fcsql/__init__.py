@@ -1,3 +1,7 @@
+from typing import List
+from typing import Literal
+from typing import overload
+
 from antlr4 import CommonTokenStream
 from antlr4 import InputStream
 from antlr4.error.ErrorListener import ErrorListener
@@ -11,6 +15,9 @@ from fcsql.parser import QueryNode
 from fcsql.parser import QueryParser
 from fcsql.parser import QueryParserException  # noqa: F401
 from fcsql.parser import SourceLocation  # noqa: F401
+from fcsql.validation import DEFAULT_VALIDATOR_SPECIFICATION_VERSION
+from fcsql.validation import VALIDATORS
+from fcsql.validation import SpecificationValidationError
 
 # ---------------------------------------------------------------------------
 
@@ -81,6 +88,97 @@ def can_parse(input: str):
         return True
     except QueryParserException:
         return False
+
+
+# ---------------------------------------------------------------------------
+
+
+@overload
+def validate(
+    input: str,
+    *,
+    version: str = DEFAULT_VALIDATOR_SPECIFICATION_VERSION,
+    return_errors: Literal[False] = False,
+    warnings_as_errors: bool = False,
+) -> bool: ...
+
+
+@overload
+def validate(
+    input: str,
+    *,
+    version: str = DEFAULT_VALIDATOR_SPECIFICATION_VERSION,
+    return_errors: Literal[True] = True,
+    warnings_as_errors: bool = False,
+) -> List[ErrorDetail]: ...
+
+
+def validate(
+    input: str,
+    *,
+    version: str = DEFAULT_VALIDATOR_SPECIFICATION_VERSION,
+    return_errors: bool = False,
+    warnings_as_errors: bool = False,
+):
+    """Validate input query string by trying to parse it and if successful run a FCS-QL
+    specification validation. Collect errors/warnings.
+
+    Args:
+        input: the raw query input string
+        version: the specification version to validate against.
+                 Defaults to DEFAULT_VALIDATOR_SPECIFICATION_VERSION ("2.2").
+        return_errors: whether to return simply a boolean if valid or a list of errors.
+                       Defaults to False.
+        warnings_as_errors: handle warnings as errors. Defaults to False.
+
+    Raises:
+        ValueError: raised if ``version`` argument specifies an unknown FCS(-QL) specification
+                    or no ``Validator`` can be found for this version.
+
+    Returns:
+        bool: if ``return_errors`` is ``False`` only return a boolean.
+              Returns ``True`` if parsing and validation is without issues, ``False`` otherwise.
+        List[ErrorDetail]: if ``return_errors`` is ``True`` return a list of errors AND warnings.
+    """
+    # "check" params
+    validator_cls = VALIDATORS.get(version, None)
+    if validator_cls is None:
+        raise ValueError(f"No validator found for {version=}!")
+
+    # create parser/validator
+    parser = QueryParser(enableSourceLocations=True)
+    validator = validator_cls(
+        query=input,
+        raise_at_first_violation=not return_errors,
+        warnings_as_errors=warnings_as_errors,
+    )
+
+    # try to parse the input query string
+    try:
+        qn = parser.parse(input)
+    except QueryParserException as ex:
+        if not return_errors:
+            return False
+
+        errors = []
+        if not str(ex).startswith("unable to parse query: "):
+            errors.append(ErrorDetail(str(ex)))
+        errors.extend(parser.errors)
+        return errors
+
+    # if parsing successful, run validation
+    try:
+        validator.validate(qn)
+    except SpecificationValidationError:
+        # not will raise if raise_at_first_violation enabled
+        return False
+
+    errors = list()
+    errors.extend(validator.errors)
+    if warnings_as_errors:
+        errors.extend(validator.warnings)
+
+    return errors if return_errors else not bool(errors)
 
 
 # ---------------------------------------------------------------------------

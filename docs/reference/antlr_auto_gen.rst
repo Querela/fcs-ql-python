@@ -45,3 +45,11 @@ fcsql.FCSParserListener
 .. py:module:: fcsql.FCSParserListener
 
     .. py:class:: FCSParserListener
+
+
+fcsql.FCSParserVisitor
+----------------------
+
+.. py:module:: fcsql.FCSParserVisitor
+
+    .. py:class:: FCSParserVisitor
