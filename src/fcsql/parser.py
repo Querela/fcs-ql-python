@@ -506,7 +506,7 @@ class QueryNode(Generic[_R], metaclass=ABCMeta):
             strrepr += f"@{self.location.start}:{self.location.stop}"
         return strrepr
 
-    def accept(self, visitor: QueryVisitor) -> _R:
+    def accept(self, visitor: QueryVisitor) -> Optional[_R]:
         return visitor.visit(self)
 
 

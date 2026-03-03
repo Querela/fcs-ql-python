@@ -213,4 +213,86 @@ def test_validation_custom_layer_qualifiers_v2_2(parser: QueryParser):
     assert validator.errors[0].message == "Unknown layer identifier 'pos' (only allowed: ['abc'])!"
 
 
+def test_is_likely_a_regex():
+    from fcsql.validation import is_likely_a_regex
+
+    assert is_likely_a_regex("NOUN") is False
+    assert is_likely_a_regex("multiple words") is False
+
+    assert is_likely_a_regex("^NOUN") is True
+    assert is_likely_a_regex("NOUN$") is True
+    assert is_likely_a_regex("NOUN?") is True
+    assert is_likely_a_regex("(NOUN)") is True
+    assert is_likely_a_regex("N[O]UN") is True
+
+    assert is_likely_a_regex("with\\ escapes") is True
+
+    # false positives
+    assert is_likely_a_regex("test.") is True
+    assert is_likely_a_regex("test?") is True
+
+
+def test_validation_errors_warnings_reset(parser: QueryParser):
+    query = """[ pos = "NNS"]"""
+    node = parser.parse(query)
+
+    # if only as a warning, then validates ok
+    validator = FCSQLValidator(raise_at_first_violation=False, warnings_as_errors=False)
+    assert validator.validate(node, query=query) is True
+    assert len(validator.errors) == 0
+    assert len(validator.warnings) == 1
+
+    # if warnings are errors, then it fails validation
+    validator = FCSQLValidator(raise_at_first_violation=False, warnings_as_errors=True)
+    assert validator.validate(node, query=query) is False
+    assert len(validator.errors) == 0
+    assert len(validator.warnings) == 1
+
+    # just a test to check it resets properly
+    assert validator.validate(node, query=query) is False
+    assert len(validator.errors) == 0
+    assert len(validator.warnings) == 1
+
+    # again, same but different
+    query = """[ post = "NNS"]"""
+    node = parser.parse(query)
+    assert validator.validate(node, query=query) is False
+    assert len(validator.errors) == 1
+    assert len(validator.warnings) == 0
+
+
+def test_validation_pos_layer_v2_2(parser: QueryParser):
+    query = """[ stts:pos = "NNS"]"""
+    node = parser.parse(query)
+    validator = FCSQLValidator(raise_at_first_violation=True, warnings_as_errors=True)
+    validator.validate(node, query=query)
+
+    query = """[ pos = "NNS"]"""
+    node = parser.parse(query)
+    with pytest.raises(SpecificationValidationError) as exc:
+        validator.validate(node, query=query)
+    assert exc.match(
+        r"Layer 'pos' without qualifier should use UD17 POS tags, found 'NNS' "
+        r"\(recommended to only use: \['ADJ', 'ADV', 'INTJ', 'NOUN', 'PROPN', 'VERB', 'ADP', 'AUX',"
+        r" 'CCONJ', 'DET', 'NUM', 'PART', 'PRON', 'SCONJ', 'PUNCT', 'SYM', 'X'\]\)"
+    )
+
+    query = """[ pos = "ART"]"""
+    node = parser.parse(query)
+    with pytest.raises(SpecificationValidationError) as exc:
+        validator.validate(node, query=query)
+
+
+def test_validation_word_layer(parser: QueryParser):
+    query = """[ word = "test" ]"""
+    node = parser.parse(query)
+
+    validator = FCSQLValidator(raise_at_first_violation=False, warnings_as_errors=False)
+    assert validator.validate(node, query=query) is True
+    assert len(validator.errors) == 0
+    assert len(validator.warnings) == 1
+    assert validator.warnings[0].message == "Usage of legacy(?) layer 'word'. Did you mean 'text' instead?"
+    assert validator.warnings[0].fragment == 'word = "test"'
+
+
 # ---------------------------------------------------------------------------

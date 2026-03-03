@@ -1,4 +1,5 @@
 import logging
+import re
 from abc import ABCMeta
 from collections import deque
 from typing import Deque
@@ -99,7 +100,7 @@ class Validator(QueryVisitorAdapter[_R], metaclass=ABCMeta):
 
         Returns:
             bool: ``True`` if query in valid, ``False`` if any error was recorded
-                  in the ``.errors`` attribute
+                  in the ``.errors`` attribute (or in ``.warnings`` if ``.warnings_as_errors``)
         """
         # allows to override the query string here
         if query is not None:
@@ -112,7 +113,11 @@ class Validator(QueryVisitorAdapter[_R], metaclass=ABCMeta):
         # start validation
         self.visit(node)
 
-        return len(self.errors) == 0
+        num_issues = len(self.errors)
+        if self.warnings_as_errors:
+            num_issues += len(self.warnings)
+
+        return num_issues == 0
 
     def is_valid(self, node: QueryNode, *, query: Optional[str] = None) -> bool:
         """Convenience method that simply calls ``.validate()`` and returns
@@ -285,12 +290,60 @@ class Validator(QueryVisitorAdapter[_R], metaclass=ABCMeta):
 # ---------------------------------------------------------------------------
 
 
+UNIVERSAL_POS_TAGS = [
+    # Open class words
+    "ADJ",
+    "ADV",
+    "INTJ",
+    "NOUN",
+    "PROPN",
+    "VERB",
+    # Closed class words
+    "ADP",
+    "AUX",
+    "CCONJ",
+    "DET",
+    "NUM",
+    "PART",
+    "PRON",
+    "SCONJ",
+    # Other
+    "PUNCT",
+    "SYM",
+    "X",
+]
+"""Universal POS tags
+
+See:
+    https://universaldependencies.org/u/pos/index.html
+"""
+
+
+def is_likely_a_regex(value: str) -> bool:
+    """Checks if a string is possibly a regex by trying to escape special characters.
+    If something will be escaped, it might be a regex. Note, that this will likely fail
+    if the string contains already escaped regex special characters. Probably.
+
+    Args:
+        value: the string to check
+
+    Returns:
+        bool: ``True`` if likely a regular expression, ``False`` if most certainly not a regex
+
+    See:
+        https://docs.python.org/3.10/library/re.html#re.escape
+    """
+    value = value.replace(" ", "")
+    return value != re.escape(value)
+
+
 class FCSQLValidator(Validator[None]):
     """FCS-QL Query Validator for FCS Spec 2.2"""
 
     SPECIFICATION_VERSION = "2.2"
     """FCS (FCS-QL) specification version"""
 
+    KNOWN_LEGACY_LAYER_IDENTIFIER = ["word"]
     KNOWN_LAYER_IDENTIFIERS = [
         "text",
         "lemma",
@@ -329,7 +382,11 @@ class FCSQLValidator(Validator[None]):
                 )
         else:
             if node.identifier not in self.KNOWN_LAYER_IDENTIFIERS:
-                if not node.identifier.startswith("x-"):
+                if node.identifier in self.KNOWN_LEGACY_LAYER_IDENTIFIER:
+                    self.validation_warning(
+                        node, f"Usage of legacy(?) layer '{node.identifier}'. Did you mean 'text' instead?"
+                    )
+                elif not node.identifier.startswith("x-"):
                     self.validation_error(node, f"Unknown layer identifier '{node.identifier}'!")
                 else:
                     self.validation_warning(node, f"Usage of custom layer with identifier '{node.identifier}'")
@@ -355,6 +412,17 @@ class FCSQLValidator(Validator[None]):
                     (
                         f"Usage of unknown layer qualifier '{node.qualifier}' for layer with "
                         f"identifier '{node.identifier}' (only allowed: {allowed_qualifiers!r})!"
+                    ),
+                )
+
+        if node.identifier == "pos" and not node.qualifier:
+            # special check that ignores regex flags and only checks for literal strings (case-sensitive)
+            if node.regex not in UNIVERSAL_POS_TAGS and not is_likely_a_regex(node.regex) and not node.regex_flags:
+                self.validation_warning(
+                    node,
+                    (
+                        f"Layer '{node.identifier}' without qualifier should use UD17 POS tags"
+                        f", found '{node.regex}' (recommended to only use: {UNIVERSAL_POS_TAGS!r})"
                     ),
                 )
 
